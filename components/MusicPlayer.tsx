@@ -22,6 +22,8 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
     videos.length > 0 ? videos[0].id : null
   );
 
+  console.log(videos);
+
   return (
     <div className="space-y-6">
       {/* 기분 분석 결과 */}
