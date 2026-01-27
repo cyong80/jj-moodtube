@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MoodTube 🎵😊
 
-## Getting Started
+표정 인식 기반 음악 추천 웹 애플리케이션
 
-First, run the development server:
+## 주요 기능
+
+- 웹캠을 통한 실시간 표정 인식
+- AI 기반 감정 분석 (Google Gemini)
+- 감정에 맞는 YouTube 음악 플레이리스트 자동 생성
+- 모던한 UI/UX
+
+## 기술 스택
+
+- **Frontend**: Next.js 16, React 19, TailwindCSS
+- **AI**: Google Gemini API
+- **API**: YouTube Data API v3
+- **UI Components**: Radix UI, Lucide Icons, Sonner
+- **Animation**: Framer Motion
+
+## 로컬 개발 환경 설정
+
+### 1. 저장소 클론
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/cyong80/jj-moodtube.git
+cd jj-moodtube
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. 의존성 설치
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+yarn install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. 환경변수 설정
 
-## Learn More
+`.env.local` 파일을 생성하고 다음 내용을 추가:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+cp env.sample .env.local
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+필수 환경변수:
+- `GOOGLE_GEMINI_API_KEY`: [Google AI Studio](https://aistudio.google.com/app/apikey)에서 발급
+- `YOUTUBE_API_KEY`: [Google Cloud Console](https://console.cloud.google.com/apis/credentials)에서 발급
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 4. HTTPS 인증서 생성 (로컬 개발용)
 
-## Deploy on Vercel
+```bash
+mkdir certificates
+cd certificates
+# mkcert 사용 (권장)
+mkcert localhost
+mv localhost.pem localhost-cert.pem
+mv localhost-key.pem localhost-key.pem
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 5. 개발 서버 실행
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+yarn dev
+```
+
+브라우저에서 [https://localhost:3000](https://localhost:3000) 접속
+
+## Vercel 배포
+
+상세한 배포 가이드는 [DEPLOYMENT.md](./DEPLOYMENT.md)를 참조하세요.
+
+### 간단 요약
+
+1. [Vercel](https://vercel.com)에서 GitHub 저장소 연결
+2. 환경변수 설정:
+   - `GOOGLE_GEMINI_API_KEY`
+   - `YOUTUBE_API_KEY`
+3. 배포 버튼 클릭
+
+## 프로젝트 구조
+
+```
+jj-moodtube/
+├── app/
+│   ├── actions.ts          # 서버 액션 (AI 감정 분석)
+│   ├── page.tsx            # 메인 페이지
+│   └── layout.tsx          # 레이아웃
+├── components/
+│   ├── MusicPlayer.tsx     # 음악 플레이어 컴포넌트
+│   └── ui/                 # UI 컴포넌트들
+├── server.js               # 로컬 HTTPS 서버
+├── vercel.json             # Vercel 배포 설정
+└── env.sample              # 환경변수 예시
+```
+
+## 라이선스
+
+MIT
+
+## 문의
+
+문제가 있거나 제안사항이 있으시면 이슈를 등록해주세요.

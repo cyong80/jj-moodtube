@@ -1,0 +1,12 @@
+{
+  "buildCommand": "next build",
+  "devCommand": "node server.js",
+  "installCommand": "yarn install",
+  "framework": "nextjs",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
+  ]
+}
