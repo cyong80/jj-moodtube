@@ -24,6 +24,7 @@ export async function getMoodPlaylist(base64Image: string) {
             { text: "You are a professional Music DJ. Analyze the image and return a JSON object: { 'mood': 'string', 'description': 'string', 'searchQuery': 'string' }" },
             { inlineData: { data: imageData, mimeType: "image/jpeg" } },
             { text: "Analyze the mood of this person and their surroundings." },
+            { text: "searchQuery는 유튜브 음악을 검색할 때 사용하는 검색어로, 최대 100자 이내로 해줘" },
             { text: "응답은 한글로 해줘" }
           ]
         }
@@ -34,9 +35,9 @@ export async function getMoodPlaylist(base64Image: string) {
     const analysis = JSON.parse(textResponse.replace(/```json|```/g, ""));
 
     // const analysis = {
-    //     mood: 'Pensive & Quiet',
-    //     description: 'The image captures a person in an extremely dim, almost dark environment, likely late at night. Their face is faintly illuminated, suggesting they are looking at a screen, casting a soft glow. The expression is neutral, almost pensive, with a hint of weariness in the eyes, conveying a sense of quiet introspection or deep thought in solitude. The overall atmosphere is one of calm, serene darkness, perfect for winding down or focusing.',
-    //     searchQuery: 'Lo-fi beats, ambient chill, late night introspection, deep focus instrumental, chillwave, downtempo, atmospheric background music'
+    //     mood: '고독하고 우울한 밤',
+    //     description: '어두운 방 안, 베개에 기댄 채 깊은 생각에 잠겨 있거나 슬픔에 잠긴 듯한 얼굴입니다. 빛이 거의 없어 고독하고 침울한 분위기가 강조되며, 밤늦게까지 잠 못 이루는 듯한 모습에서 오는 복잡한 감정들이 느껴집니다.',
+    //     searchQuery: '새벽 감성, 차분한 앰비언트, 우울한 발라드, 늦은 밤 플레이리스트, lo-fi 슬픔, 고독한 음악, 생각 많은 밤'
     //   };
 
     console.log(analysis);
@@ -45,8 +46,9 @@ export async function getMoodPlaylist(base64Image: string) {
       part: ["snippet"],
       q: analysis.searchQuery,
       type: ["video"],
-      videoCategoryId: "10",
+     // videoCategoryId: "10",
       maxResults: 5,
+
     });
 
     return {

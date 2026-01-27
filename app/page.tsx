@@ -39,7 +39,7 @@ export default function MoodTubePage() {
         <div className="grid lg:grid-cols-12 gap-10">
           <div className="lg:col-span-5 space-y-6">
             <Card className="overflow-hidden bg-zinc-900 border-zinc-800 rounded-[2rem]">
-              {status === "idle" ? (
+              {(status === "idle"  || status === "result") ? (
                 <Webcam
                   ref={webcamRef}
                   screenshotFormat="image/jpeg"
