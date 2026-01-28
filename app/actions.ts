@@ -21,10 +21,11 @@ export async function getMoodPlaylist(base64Image: string) {
         {
           role: "user",
           parts: [
-            { text: "You are a professional Music DJ. Analyze the image and return a JSON object: { 'mood': 'string', 'description': 'string', 'searchQuery': 'string' }" },
+            { text: "당신은 전문 음악 DJ입니다. 이미지를 분석하고 다음 형식의 JSON 객체를 반환하세요: { 'mood': 'string', 'description': 'string', 'searchQuery': 'string' }" },
             { inlineData: { data: imageData, mimeType: "image/jpeg" } },
-            { text: "Analyze the mood of this person and their surroundings." },
-            { text: "searchQuery는 유튜브 음악을 검색할 때 사용하는 검색어로, 최대 100자 이내로 해줘" },
+            { text: "이 사람의 감정과 주변 환경의 분위기를 분석해주세요." },
+            { text: "분석 시 현재 날씨, 계절, 절기(입춘, 경칩, 청명 등), 기념일(크리스마스, 발렌타인데이, 추석 등)도 함께 고려하고 인물사진은 인물의 기분을 고려하고 그외는 이미지의 내용을 고려하여 더욱 적절한 음악을 추천할 수 있는 키워드 형태로 만들어줘" },
+            { text: "searchQuery는 유튜브 음악을 검색할 때 사용하는 검색어로, 5개 이내의 키워드로 만들어줘" },
             { text: "응답은 한글로 해줘" }
           ]
         }
@@ -34,19 +35,20 @@ export async function getMoodPlaylist(base64Image: string) {
     const textResponse = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
     const analysis = JSON.parse(textResponse.replace(/```json|```/g, ""));
 
-    // const analysis = {
-    //     mood: '고독하고 우울한 밤',
-    //     description: '어두운 방 안, 베개에 기댄 채 깊은 생각에 잠겨 있거나 슬픔에 잠긴 듯한 얼굴입니다. 빛이 거의 없어 고독하고 침울한 분위기가 강조되며, 밤늦게까지 잠 못 이루는 듯한 모습에서 오는 복잡한 감정들이 느껴집니다.',
-    //     searchQuery: '새벽 감성, 차분한 앰비언트, 우울한 발라드, 늦은 밤 플레이리스트, lo-fi 슬픔, 고독한 음악, 생각 많은 밤'
-    //   };
+//     const analysis = {
+//   mood: '신비로운, 몽환적인, 고요한',
+//   description: '칠흑 같은 어둠 속, 저 멀리서 희미하게 빛나는 푸른 불빛이 신비롭고 몽환적인 분위기를 자아냅니다. 깊은 밤의 고요함 속에서 내면으로 침잠하는 듯한 느낌을 줍니다. 마치 미지의 공간에서 길을 찾거나, 깊은 생각에 잠기는 순간 같아요.',
+//   searchQuery: '심야 감성 음악, 몽환적인 일렉트로닉, 고요한 딥 하우스, 우주 앰비언트 플레이리스트'
+// };
 
     console.log(analysis);
-    // 유튜브 검색
+    // 유튜브 검색 (플레이리스트 제외)
     const ytRes = await youtube.search.list({
       part: ["snippet"],
-      q: analysis.searchQuery,
+      q: `${analysis.searchQuery} -playlist`,
       type: ["video"],
-     // videoCategoryId: "10",
+      videoCategoryId: "10",
+      videoEmbeddable: "true",
       maxResults: 5,
 
     });

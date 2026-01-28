@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
-import { Play, Music2 } from "lucide-react";
+import { Play, Music2, Pause, SkipBack, SkipForward } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Video {
   id: string;
@@ -17,12 +18,116 @@ interface MusicPlayerProps {
   description: string;
 }
 
+// YouTube IFrame API 타입 정의
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
+
 export default function MusicPlayer({ videos, mood, description }: MusicPlayerProps) {
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(
     videos.length > 0 ? videos[0].id : null
   );
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const playerRef = useRef<any>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
 
   console.log(videos);
+
+  // YouTube IFrame API 로드
+  useEffect(() => {
+    // 이미 로드되어 있으면 스킵
+    if (window.YT) {
+      return;
+    }
+
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName("script")[0];
+    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+  }, []);
+
+  // 플레이어 초기화
+  useEffect(() => {
+    if (!currentVideoId || !playerContainerRef.current) return;
+
+    const initPlayer = () => {
+      // 기존 플레이어가 있으면 제거
+      if (playerRef.current) {
+        playerRef.current.destroy();
+      }
+
+      playerRef.current = new window.YT.Player(playerContainerRef.current, {
+        videoId: currentVideoId,
+        playerVars: {
+          autoplay: 1,
+          enablejsapi: 1,
+        },
+        events: {
+          onStateChange: (event: any) => {
+            // 재생 상태 업데이트
+            if (event.data === window.YT.PlayerState.PLAYING) {
+              setIsPlaying(true);
+            } else if (event.data === window.YT.PlayerState.PAUSED) {
+              setIsPlaying(false);
+            }
+            
+            // 비디오 재생이 끝났을 때
+            if (event.data === window.YT.PlayerState.ENDED) {
+              playNextVideo();
+            }
+          },
+        },
+      });
+    };
+
+    // YouTube API가 로드되었는지 확인
+    if (window.YT && window.YT.Player) {
+      initPlayer();
+    } else {
+      window.onYouTubeIframeAPIReady = initPlayer;
+    }
+
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.destroy();
+      }
+    };
+  }, [currentVideoId]);
+
+  // 다음 곡 재생
+  const playNextVideo = () => {
+    const nextIndex = (currentIndex + 1) % videos.length;
+    setCurrentIndex(nextIndex);
+    setCurrentVideoId(videos[nextIndex].id);
+  };
+
+  // 이전 곡 재생
+  const playPreviousVideo = () => {
+    const prevIndex = (currentIndex - 1 + videos.length) % videos.length;
+    setCurrentIndex(prevIndex);
+    setCurrentVideoId(videos[prevIndex].id);
+  };
+
+  // 재생/멈춤 토글
+  const togglePlayPause = () => {
+    if (!playerRef.current) return;
+    
+    if (isPlaying) {
+      playerRef.current.pauseVideo();
+    } else {
+      playerRef.current.playVideo();
+    }
+  };
+
+  // 수동으로 비디오 선택
+  const handleVideoSelect = (videoId: string, index: number) => {
+    setCurrentIndex(index);
+    setCurrentVideoId(videoId);
+  };
 
   return (
     <div className="space-y-6">
@@ -41,16 +146,59 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
       {currentVideoId && (
         <Card className="overflow-hidden bg-zinc-900 border-zinc-800 rounded-2xl">
           <div className="aspect-video">
-            <iframe
-              width="100%"
-              height="100%"
-              src={`https://www.youtube.com/embed/${currentVideoId}?autoplay=1`}
-              title="YouTube video player"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
+            <div
+              ref={playerContainerRef}
               className="w-full h-full"
             />
+          </div>
+          
+          {/* 플레이어 컨트롤 */}
+          <div className="p-6 bg-zinc-900/50 border-t border-zinc-800">
+            <div className="flex items-center justify-center gap-4">
+              {/* 이전 곡 버튼 */}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={playPreviousVideo}
+                className="h-12 w-12 rounded-full border-zinc-700 hover:border-purple-500 hover:bg-purple-500/10 transition-all"
+              >
+                <SkipBack className="h-5 w-5" />
+              </Button>
+
+              {/* 재생/멈춤 버튼 */}
+              <Button
+                variant="default"
+                size="icon"
+                onClick={togglePlayPause}
+                className="h-16 w-16 rounded-full bg-purple-600 hover:bg-purple-700 transition-all shadow-lg shadow-purple-500/20"
+              >
+                {isPlaying ? (
+                  <Pause className="h-7 w-7" fill="currentColor" />
+                ) : (
+                  <Play className="h-7 w-7" fill="currentColor" />
+                )}
+              </Button>
+
+              {/* 다음 곡 버튼 */}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={playNextVideo}
+                className="h-12 w-12 rounded-full border-zinc-700 hover:border-purple-500 hover:bg-purple-500/10 transition-all"
+              >
+                <SkipForward className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* 현재 재생 중인 곡 정보 */}
+            <div className="mt-4 text-center">
+              <p className="text-sm font-medium text-zinc-300 line-clamp-1">
+                {videos[currentIndex]?.title}
+              </p>
+              <p className="text-xs text-zinc-500 mt-1">
+                {videos[currentIndex]?.channel}
+              </p>
+            </div>
           </div>
         </Card>
       )}
@@ -59,7 +207,7 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
       <div className="space-y-3">
         <h3 className="text-xl font-bold text-zinc-300">추천 플레이리스트</h3>
         <div className="space-y-3">
-          {videos.map((video) => (
+          {videos.map((video, index) => (
             <Card
               key={video.id}
               className={`
@@ -70,7 +218,7 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
                     : "bg-zinc-900 border-zinc-800 hover:border-zinc-600"
                 }
               `}
-              onClick={() => setCurrentVideoId(video.id)}
+              onClick={() => handleVideoSelect(video.id, index)}
             >
               <div className="flex gap-4 p-4">
                 {/* 썸네일 */}
