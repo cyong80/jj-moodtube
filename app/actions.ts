@@ -11,6 +11,19 @@ const youtube = google.youtube({
   auth: process.env.YOUTUBE_API_KEY,
 });
 
+ const score = (video: any, track:any) => {
+    let score = 0
+  
+    if (video.channelTitle.includes("Topic")) score += 50
+    if (/official/i.test(video.title)) score += 30
+    if (video.title.includes(track.title)) score += 20
+    if (video.title.includes(track.artist)) score += 20
+    if (video.duration >= 120 && video.duration <= 360) score += 20
+    if (/cover|live|remix|shorts/i.test(video.title)) score -= 40
+  
+    return score;
+  }
+
 export async function getMoodPlaylist(base64Image: string) {
   try {
    
@@ -25,7 +38,7 @@ export async function getMoodPlaylist(base64Image: string) {
             { inlineData: { data: imageData, mimeType: "image/jpeg" } },
             { text: "이 사람의 감정과 주변 환경의 분위기를 분석해주세요." },
             { text: "분석 시 현재 날씨, 계절, 절기(입춘, 경칩, 청명 등), 기념일(크리스마스, 발렌타인데이, 추석 등)도 함께 고려하고 인물사진은 인물의 기분을 고려하고 그외는 이미지의 내용을 고려하여 더욱 적절한 음악을 추천할 수 있는 키워드 형태로 만들어줘" },
-            { text: "searchQuery는 유튜브 음악을 검색할 때 사용하는 검색어로, 5개 이내의 키워드로 만들어줘" },
+            { text: "searchQuery는 10개의 배열로 분석을 기반으로 추천할 수 있는 노래를 JSON 객체를 []{'title': '곡명', 'artist': '아티스트명'} 형태로 만들어줘" },
             { text: "응답은 한글로 해줘" }
           ]
         }
@@ -42,21 +55,46 @@ export async function getMoodPlaylist(base64Image: string) {
 // };
 
     console.log(analysis);
-    // 유튜브 검색 (플레이리스트 제외)
-    const ytRes = await youtube.search.list({
-      part: ["snippet"],
-      q: `${analysis.searchQuery} -playlist`,
-      type: ["video"],
-      videoCategoryId: "10",
-      videoEmbeddable: "true",
-      maxResults: 5,
+    const videos: any[] = [];
 
-    });
+    if(Array.isArray(analysis.searchQuery)) {
+        for(const query of analysis.searchQuery) {
+            const ytRes = await youtube.search.list({
+                part: ["snippet"],
+                q: `[${query.title}] [${query.artist}] topic`,
+                type: ["video"],
+                videoCategoryId: "10",
+                videoEmbeddable: "true",
+                maxResults: 5,
+            });
+
+            if(ytRes.data.items && ytRes.data.items.length > 0) {
+                for(const item of ytRes.data.items) {
+                    const s = score(item.snippet, query);
+                 
+                    if(s >= 50) {
+                        videos.push(item);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    // 유튜브 검색 (플레이리스트 제외)
+    // const ytRes = await youtube.search.list({
+    //   part: ["snippet"],
+    //   q: `${analysis.searchQuery} -playlist`,
+    //   type: ["video"],
+    //   videoCategoryId: "10",
+    //   videoEmbeddable: "true",
+    //   maxResults: 5,
+
+    // });
 
     return {
       ...analysis,
       capturedImage: base64Image,
-      videos: ytRes.data.items?.map(item => ({
+      videos: videos.map(item => ({
         id: item.id?.videoId,
         title: item.snippet?.title,
         channel: item.snippet?.channelTitle,
