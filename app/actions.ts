@@ -34,7 +34,7 @@ export async function getMoodPlaylist(base64Image: string) {
         {
           role: "user",
           parts: [
-            { text: "당신은 전문 음악 DJ입니다. 이미지를 분석하고 다음 형식의 JSON 객체를 반환하세요: { 'mood': 'string', 'description': 'string', 'searchQuery': 'string' }" },
+            { text: "당신은 전문 음악 DJ입니다. 이미지를 분석하고 반드시 다음 형식의 JSON 객체를 반환하세요: { 'mood': 'string', 'description': 'string', 'searchQuery': []{'title': '곡명', 'artist': '아티스트명'} }" },
             { inlineData: { data: imageData, mimeType: "image/jpeg" } },
             { text: "이 사람의 감정과 주변 환경의 분위기를 분석해주세요." },
             { text: "분석 시 현재 날씨, 계절, 절기(입춘, 경칩, 청명 등), 기념일(크리스마스, 발렌타인데이, 추석 등)도 함께 고려하고 인물사진은 인물의 기분을 고려하고 그외는 이미지의 내용을 고려하여 더욱 적절한 음악을 추천할 수 있는 키워드 형태로 만들어줘" },
