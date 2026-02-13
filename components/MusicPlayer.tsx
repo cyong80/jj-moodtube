@@ -134,9 +134,9 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
       {/* 기분 분석 결과 */}
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <Music2 className="w-8 h-8 text-purple-500" />
+          <Music2 className="w-8 h-8 text-primary" />
           <h2 className="text-3xl font-bold text-white">
-            당신은 오늘 <span className="text-purple-400">{mood}</span> 하군요!
+            당신은 오늘 <span className="text-primary">{mood}</span> 하군요!
           </h2>
         </div>
         <p className="text-zinc-300 text-base leading-relaxed">{description}</p>
@@ -160,7 +160,7 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
                 variant="outline"
                 size="icon"
                 onClick={playPreviousVideo}
-                className="h-12 w-12 rounded-full border-zinc-700 hover:border-purple-500 hover:bg-purple-500/10 transition-all"
+                className="h-12 w-12 rounded-full border-zinc-700 hover:border-primary hover:bg-primary/10 transition-all"
               >
                 <SkipBack className="h-5 w-5" />
               </Button>
@@ -170,7 +170,7 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
                 variant="default"
                 size="icon"
                 onClick={togglePlayPause}
-                className="h-16 w-16 rounded-full bg-purple-600 hover:bg-purple-700 transition-all shadow-lg shadow-purple-500/20"
+                className="h-16 w-16 rounded-full bg-primary hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
               >
                 {isPlaying ? (
                   <Pause className="h-7 w-7" fill="currentColor" />
@@ -184,7 +184,7 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
                 variant="outline"
                 size="icon"
                 onClick={playNextVideo}
-                className="h-12 w-12 rounded-full border-zinc-700 hover:border-purple-500 hover:bg-purple-500/10 transition-all"
+                className="h-12 w-12 rounded-full border-zinc-700 hover:border-primary hover:bg-primary/10 transition-all"
               >
                 <SkipForward className="h-5 w-5" />
               </Button>
@@ -214,7 +214,7 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
                 cursor-pointer transition-all duration-200 overflow-hidden
                 ${
                   currentVideoId === video.id
-                    ? "bg-purple-600/20 border-purple-500"
+                    ? "bg-primary/20 border-primary"
                     : "bg-zinc-900 border-zinc-800 hover:border-zinc-600"
                 }
               `}

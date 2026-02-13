@@ -36,7 +36,7 @@ function LoginContent() {
       <div className="w-full max-w-md space-y-8 text-center">
         <header className="space-y-2">
           <h1 className="text-4xl sm:text-5xl font-black tracking-tighter">
-            Mood<span className="text-purple-600">Tube</span>
+            Mood<span className="text-primary">Tube</span>
           </h1>
           <p className="text-zinc-400 text-sm sm:text-base">
             Google 계정으로 로그인하여 시작하세요
