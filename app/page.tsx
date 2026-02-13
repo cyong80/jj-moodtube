@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { signIn, useSession } from "next-auth/react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
 
@@ -68,6 +69,13 @@ function LoginContent() {
             </svg>
             Google로 로그인
           </Button>
+
+          <Link
+            href="/mood"
+            className="block w-full py-3 text-zinc-400 hover:text-white text-sm transition-colors"
+          >
+            로그인 없이 둘러보기
+          </Link>
 
           {error && (
             <p className="text-red-500 text-sm">

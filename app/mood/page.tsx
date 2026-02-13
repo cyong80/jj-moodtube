@@ -3,8 +3,10 @@
 import MusicPlayer from "@/components/MusicPlayer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Camera, Loader2, Mic } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
+import { Camera, LogIn, Loader2, LogOut, Mic } from "lucide-react";
+import { signIn, signOut, useSession } from "next-auth/react";
+import { useCallback, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import { toast } from "sonner";
 import { getMoodPlaylist, getMoodPlaylistFromText } from "../actions";
@@ -12,16 +14,49 @@ import { getMoodPlaylist, getMoodPlaylistFromText } from "../actions";
 type InputMode = "capture" | "voice";
 
 export default function MoodTubePage() {
+  const { status: sessionStatus } = useSession();
   const webcamRef = useRef<Webcam>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [inputMode, setInputMode] = useState<InputMode>("capture");
   const [cameraStarted, setCameraStarted] = useState(false);
   const [status, setStatus] = useState<
     "idle" | "scanning" | "listening" | "result"
   >("idle");
   const [result, setResult] = useState<any>(null);
-  const [transcript, setTranscript] = useState("");
-  const [isListening, setIsListening] = useState(false);
+
+  const handleVoiceResult = useCallback(async (text: string) => {
+    setStatus("scanning");
+    try {
+      const data = await getMoodPlaylistFromText(text);
+      setResult(data);
+      setStatus("result");
+    } catch (error) {
+      toast.error("오류 발생", {
+        description: "분석을 완료할 수 없습니다.",
+      });
+      setStatus("idle");
+    }
+  }, []);
+
+  const {
+    transcript,
+    isListening,
+    isSupported,
+    toggle: handleVoiceClick,
+  } = useVoiceRecognition({
+    onResult: handleVoiceResult,
+    onEmpty: () => {
+      setStatus("idle");
+      toast.error("음성을 인식하지 못했습니다", {
+        description: "다시 말씀해 주세요.",
+      });
+    },
+    onError: () => {
+      setStatus("idle");
+      toast.error("음성 인식 오류", {
+        description: "마이크 권한을 확인해 주세요.",
+      });
+    },
+  });
 
   const handleCapture = useCallback(async () => {
     const imageSrc = webcamRef.current?.getScreenshot();
@@ -38,100 +73,52 @@ export default function MoodTubePage() {
     }
   }, []);
 
-  const transcriptRef = useRef("");
-
-  const startVoiceRecognition = useCallback(() => {
-    const SpeechRecognitionAPI =
-      typeof window !== "undefined" &&
-      (window.SpeechRecognition || (window as any).webkitSpeechRecognition);
-
-    if (!SpeechRecognitionAPI) {
+  const handleVoiceClickWithCheck = useCallback(() => {
+    if (!isSupported) {
       toast.error("지원하지 않는 브라우저", {
         description: "Chrome, Edge, Safari에서 음성 인식을 사용할 수 있습니다.",
       });
       return;
     }
-
-    const recognition = new SpeechRecognitionAPI();
-    recognition.lang = "ko-KR";
-    recognition.continuous = false;
-    recognition.interimResults = true;
-
-    recognition.onaudiostart = () => {
-      setTranscript("");
-      transcriptRef.current = "";
-    };
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let finalTranscript = "";
-      for (let i = 0; i < event.results.length; i++) {
-        finalTranscript += event.results[i][0].transcript;
-      }
-      transcriptRef.current = finalTranscript;
-      setTranscript(finalTranscript);
-    };
-
-    recognition.onend = async () => {
-      setIsListening(false);
-      const finalText = transcriptRef.current.trim();
-      if (finalText) {
-        setStatus("scanning");
-        try {
-          const data = await getMoodPlaylistFromText(finalText);
-          setResult(data);
-          setStatus("result");
-        } catch (error) {
-          toast.error("오류 발생", {
-            description: "분석을 완료할 수 없습니다.",
-          });
-          setStatus("idle");
-        }
-      } else {
-        setStatus("idle");
-        toast.error("음성을 인식하지 못했습니다", {
-          description: "다시 말씀해 주세요.",
-        });
-      }
-    };
-
-    recognition.onerror = () => {
-      setIsListening(false);
-      setStatus("idle");
-      toast.error("음성 인식 오류", {
-        description: "마이크 권한을 확인해 주세요.",
-      });
-    };
-
-    recognitionRef.current = recognition;
-    setIsListening(true);
-    setStatus("listening");
-    setTranscript("");
-    transcriptRef.current = "";
-    recognition.start();
-  }, []);
-
-  const handleVoiceClick = useCallback(() => {
-    if (isListening) {
-      recognitionRef.current?.abort();
-      recognitionRef.current = null;
-      return;
+    if (!isListening) {
+      setStatus("listening");
     }
-    startVoiceRecognition();
-  }, [isListening, startVoiceRecognition]);
-
-  useEffect(() => {
-    return () => {
-      recognitionRef.current?.abort();
-    };
-  }, []);
+    handleVoiceClick();
+  }, [isSupported, isListening, handleVoiceClick]);
 
   return (
     <main className="min-h-screen bg-[#030303] text-white p-4 sm:p-6 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 md:space-y-10">
         <header className="text-center space-y-2 sm:space-y-4">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter">
-            Mood<span className="text-primary">Tube</span>
-          </h1>
+          <div className="flex items-center justify-between">
+            <div className="flex-1" />
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter">
+              Mood<span className="text-primary">Tube</span>
+            </h1>
+            <div className="flex-1 flex justify-end">
+              {sessionStatus === "authenticated" ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="text-zinc-400 hover:text-white hover:bg-zinc-800"
+                >
+                  <LogOut className="w-4 h-4 mr-1.5" />
+                  로그아웃
+                </Button>
+              ) : sessionStatus === "unauthenticated" ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => signIn("google", { callbackUrl: "/mood" })}
+                  className="text-zinc-400 hover:text-white hover:bg-zinc-800"
+                >
+                  <LogIn className="w-4 h-4 mr-1.5" />
+                  로그인
+                </Button>
+              ) : null}
+            </div>
+          </div>
           <div className="flex justify-center gap-2">
             <Button
               variant={inputMode === "capture" ? "default" : "secondary"}
@@ -257,7 +244,7 @@ export default function MoodTubePage() {
               </Button>
             ) : (
               <Button
-                onClick={handleVoiceClick}
+                onClick={handleVoiceClickWithCheck}
                 disabled={status === "scanning"}
                 className={`w-full h-14 sm:h-16 text-lg sm:text-xl font-bold rounded-xl sm:rounded-2xl ${
                   isListening
