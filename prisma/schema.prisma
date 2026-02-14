@@ -21,5 +21,33 @@ model YoutubeSearchCache {
   thumbnail   String?
   createdAt   DateTime @default(now()) @map("created_at")
 
+  moodTubeResultVideos MoodTubeResultVideo[]
+
   @@map("youtube_search_cache")
+}
+
+/// 검색한 결과를 유저별 날짜별로 저장
+model MoodTubeResult {
+  id          BigInt   @id @default(autoincrement())
+  userId      String   @map("user_id")
+  date        DateTime @db.Date
+  mood        String
+  description String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  videos MoodTubeResultVideo[]
+
+  @@map("mood_tube_result")
+}
+
+model MoodTubeResultVideo {
+  id                   BigInt   @id @default(autoincrement())
+  moodTubeResultId     BigInt   @map("mood_tube_result_id")
+  youtubeSearchCacheId BigInt   @map("youtube_search_cache_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  moodTubeResult     MoodTubeResult     @relation(fields: [moodTubeResultId], references: [id])
+  youtubeSearchCache YoutubeSearchCache @relation(fields: [youtubeSearchCacheId], references: [id])
+
+  @@map("mood_tube_result_videos")
 }

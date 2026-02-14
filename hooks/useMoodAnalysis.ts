@@ -2,7 +2,11 @@
 
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { getMoodPlaylist, getMoodPlaylistFromText } from "@/app/actions";
+import {
+  getMoodPlaylist,
+  getMoodPlaylistFromText,
+  getMoodPlaylistFromAudio,
+} from "@/app/actions";
 import type { MoodPlaylistResult } from "@/types/mood";
 
 export type MoodStatus = "idle" | "scanning" | "listening" | "result";
@@ -40,6 +44,29 @@ export function useMoodAnalysis() {
     }
   }, []);
 
+  const analyzeFromAudio = useCallback(
+    async (blob: Blob, mimeType: string) => {
+      setStatus("scanning");
+      try {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        const data = await getMoodPlaylistFromAudio(base64, mimeType);
+        setResult(data);
+        setStatus("result");
+      } catch {
+        toast.error("오류 발생", {
+          description: "오디오 분석을 완료할 수 없습니다.",
+        });
+        setStatus("idle");
+      }
+    },
+    []
+  );
+
   const reset = useCallback(() => {
     setStatus("idle");
     setResult(null);
@@ -51,6 +78,7 @@ export function useMoodAnalysis() {
     result,
     analyzeFromImage,
     analyzeFromText,
+    analyzeFromAudio,
     reset,
   };
 }

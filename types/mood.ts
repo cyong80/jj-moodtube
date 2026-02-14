@@ -14,6 +14,8 @@ export interface VideoResult {
   title: string | undefined;
   channel: string | undefined;
   thumbnail: string | undefined;
+  /** 조회 시 이미 확보한 youtubeSearchCache.id - 저장 시 재조회 생략용 (직렬화를 위해 string) */
+  youtubeSearchCacheId?: string;
 }
 
 export interface MoodPlaylistResult extends MoodAnalysis {

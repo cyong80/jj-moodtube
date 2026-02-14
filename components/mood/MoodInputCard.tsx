@@ -15,6 +15,7 @@ interface MoodInputCardProps {
   result: MoodPlaylistResult | null;
   transcript: string;
   isListening: boolean;
+  volumeLevel?: number;
   isScanning: boolean;
   onCapture: (getImage: () => string | null) => void;
   onVoiceClick: () => void;
@@ -29,6 +30,7 @@ export function MoodInputCard({
   result,
   transcript,
   isListening,
+  volumeLevel = 0,
   isScanning,
   onCapture,
   onVoiceClick,
@@ -95,19 +97,36 @@ export function MoodInputCard({
     <div className="space-y-4 sm:space-y-6">
       <Card className="overflow-hidden rounded-xl sm:rounded-2xl md:rounded-[2rem]">
         {status === "listening" ? (
-          <div className="aspect-square flex flex-col items-center justify-center gap-4 sm:gap-6">
+          <div className="aspect-square flex flex-col items-center justify-center gap-4 sm:gap-6 p-6">
             <div className="relative">
               <Mic className="w-20 h-20 sm:w-24 sm:h-24 text-primary animate-pulse" />
               <span className="absolute -inset-2 rounded-full bg-primary/20 animate-ping" />
             </div>
+            {/* 음량 레벨 비주얼 - 바 형태 */}
+            <div className="flex items-end justify-center gap-1 sm:gap-1.5 h-14 sm:h-16">
+              {Array.from({ length: 10 }).map((_, i) => {
+                const barStart = i / 10;
+                const fillRatio = Math.min(1, Math.max(0, (volumeLevel - barStart) / 0.1));
+                const barHeight = 8 + i * 4;
+                return (
+                  <div
+                    key={i}
+                    className="w-2 sm:w-2.5 rounded-t bg-muted/30 overflow-hidden"
+                    style={{ height: `${barHeight}px` }}
+                  >
+                    <div
+                      className="w-full rounded-t bg-primary transition-all duration-75 ease-out"
+                      style={{
+                        height: `${Math.max(0, fillRatio * 100)}%`,
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
             <p className="text-sm sm:text-base text-muted-foreground text-center px-4">
               말씀해 주세요...
             </p>
-            {transcript && (
-              <p className="text-base sm:text-lg text-foreground font-medium text-center px-4 max-h-24 overflow-y-auto">
-                &ldquo;{transcript}&rdquo;
-              </p>
-            )}
           </div>
         ) : status === "scanning" ? (
           <div className="aspect-square flex flex-col items-center justify-center gap-3 sm:gap-4">

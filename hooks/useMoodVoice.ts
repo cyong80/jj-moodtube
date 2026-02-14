@@ -2,27 +2,28 @@
 
 import { useCallback } from "react";
 import { toast } from "sonner";
-import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
+import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import type { MoodStatus } from "./useMoodAnalysis";
 
 interface UseMoodVoiceOptions {
-  onAnalyze: (text: string) => Promise<void>;
+  onAnalyze: (blob: Blob, mimeType: string) => Promise<void>;
   setStatus: (status: MoodStatus) => void;
 }
 
 /**
- * 음성 인식과 기분 분석을 연동하는 훅 (SRP: 음성 입력 처리 단일 책임)
+ * 오디오 녹음과 기분 분석을 연동하는 훅
+ * 녹음된 음성(오디오)을 Gemini에 전달해 말한 내용 + 목소리 톤을 함께 분석
  */
 export function useMoodVoice({ onAnalyze, setStatus }: UseMoodVoiceOptions) {
   const handleVoiceClickWithCheck = useCallback(
-    (toggle: () => void, isSupported: boolean, isListening: boolean) => {
+    (toggle: () => void, isSupported: boolean, isRecording: boolean) => {
       if (!isSupported) {
         toast.error("지원하지 않는 브라우저", {
-          description: "Chrome, Edge, Safari에서 음성 인식을 사용할 수 있습니다.",
+          description: "Chrome, Edge, Safari에서 음성 녹음을 사용할 수 있습니다.",
         });
         return;
       }
-      if (!isListening) {
+      if (!isRecording) {
         setStatus("listening");
       }
       toggle();
@@ -30,34 +31,33 @@ export function useMoodVoice({ onAnalyze, setStatus }: UseMoodVoiceOptions) {
     [setStatus]
   );
 
-  const {
-    transcript,
-    isListening,
-    isSupported,
-    toggle,
-  } = useVoiceRecognition({
-    onResult: onAnalyze,
-    onEmpty: () => {
-      setStatus("idle");
-      toast.error("음성을 인식하지 못했습니다", {
-        description: "다시 말씀해 주세요.",
-      });
+  const { isRecording, isSupported, volumeLevel, toggle } = useAudioRecorder({
+    onResult: async (blob, mimeType) => {
+      if (blob.size < 1000) {
+        setStatus("idle");
+        toast.error("녹음이 너무 짧습니다", {
+          description: "1초 이상 말씀해 주세요.",
+        });
+        return;
+      }
+      await onAnalyze(blob, mimeType);
     },
     onError: () => {
       setStatus("idle");
-      toast.error("음성 인식 오류", {
+      toast.error("녹음 오류", {
         description: "마이크 권한을 확인해 주세요.",
       });
     },
   });
 
   const handleVoiceClick = useCallback(() => {
-    handleVoiceClickWithCheck(toggle, isSupported, isListening);
-  }, [handleVoiceClickWithCheck, toggle, isSupported, isListening]);
+    handleVoiceClickWithCheck(toggle, isSupported, isRecording);
+  }, [handleVoiceClickWithCheck, toggle, isSupported, isRecording]);
 
   return {
-    transcript,
-    isListening,
+    transcript: "", // 오디오 모드에서는 실시간 전사 없음
+    isListening: isRecording,
+    volumeLevel,
     isSupported,
     handleVoiceClick,
   };
