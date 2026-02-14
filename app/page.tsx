@@ -20,8 +20,8 @@ function LoginContent() {
 
   if (status === "loading" || status === "authenticated") {
     return (
-      <main className="min-h-screen bg-[#030303] flex items-center justify-center">
-        <div className="animate-pulse text-zinc-500">로딩 중...</div>
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">로딩 중...</div>
       </main>
     );
   }
@@ -33,13 +33,13 @@ function LoginContent() {
   };
 
   return (
-    <main className="min-h-screen bg-[#030303] text-white flex flex-col items-center justify-center p-6">
+    <main className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md space-y-8 text-center">
         <header className="space-y-2">
           <h1 className="text-4xl sm:text-5xl font-black tracking-tighter">
             Mood<span className="text-primary">Tube</span>
           </h1>
-          <p className="text-zinc-400 text-sm sm:text-base">
+          <p className="text-muted-foreground text-sm sm:text-base">
             Google 계정으로 로그인하여 시작하세요
           </p>
         </header>
@@ -47,7 +47,8 @@ function LoginContent() {
         <div className="space-y-4">
           <Button
             onClick={handleGoogleSignIn}
-            className="w-full h-14 sm:h-16 text-base sm:text-lg font-semibold bg-white text-gray-900 hover:bg-zinc-100 rounded-xl flex items-center justify-center gap-3"
+            variant="outline"
+            className="w-full h-14 sm:h-16 text-base sm:text-lg font-semibold bg-card hover:bg-accent rounded-xl flex items-center justify-center gap-3"
           >
             <svg className="w-6 h-6" viewBox="0 0 24 24">
               <path
@@ -72,7 +73,7 @@ function LoginContent() {
 
           <Link
             href="/mood"
-            className="block w-full py-3 text-zinc-400 hover:text-white text-sm transition-colors"
+            className="block w-full py-3 text-muted-foreground hover:text-foreground text-sm transition-colors"
           >
             로그인 없이 둘러보기
           </Link>
@@ -86,7 +87,7 @@ function LoginContent() {
           )}
         </div>
 
-        <p className="text-zinc-600 text-xs">
+        <p className="text-muted-foreground text-xs">
           로그인하면 서비스 이용약관 및 개인정보 처리방침에 동의하게 됩니다.
         </p>
       </div>
@@ -98,8 +99,8 @@ export default function HomePage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-[#030303] flex items-center justify-center">
-          <div className="animate-pulse text-zinc-500">로딩 중...</div>
+        <main className="min-h-screen bg-background flex items-center justify-center">
+          <div className="animate-pulse text-muted-foreground">로딩 중...</div>
         </main>
       }
     >

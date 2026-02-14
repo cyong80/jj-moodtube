@@ -3,6 +3,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { google, youtube_v3 } from "googleapis";
 import type { MoodAnalysis, SearchQueryTrack, VideoResult } from "@/types/mood";
+import { prisma } from "@/lib/prisma";
 
 const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY;
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
@@ -13,7 +14,10 @@ const youtube = google.youtube({
 
 const MIN_SCORE_THRESHOLD = 50;
 
-function scoreVideo(snippet: youtube_v3.Schema$SearchResultSnippet, track: SearchQueryTrack): number {
+function scoreVideo(
+  snippet: youtube_v3.Schema$SearchResultSnippet,
+  track: SearchQueryTrack,
+): number {
   let score = 0;
   if (snippet.channelTitle?.includes("Topic")) score += 50;
   if (/official/i.test(snippet.title ?? "")) score += 30;
@@ -26,7 +30,9 @@ function scoreVideo(snippet: youtube_v3.Schema$SearchResultSnippet, track: Searc
   return score;
 }
 
-async function analyzeWithGemini(contents: Parameters<typeof ai.models.generateContent>[0]["contents"]): Promise<MoodAnalysis> {
+async function analyzeWithGemini(
+  contents: Parameters<typeof ai.models.generateContent>[0]["contents"],
+): Promise<MoodAnalysis> {
   const result = await ai.models.generateContent({
     model: "gemini-2.5-flash",
     contents,
@@ -37,13 +43,56 @@ async function analyzeWithGemini(contents: Parameters<typeof ai.models.generateC
 
 type YoutubeSearchItem = youtube_v3.Schema$SearchResult;
 
-async function fetchVideosFromSearchQuery(searchQuery: SearchQueryTrack[]): Promise<YoutubeSearchItem[]> {
+function getCacheKey(query: SearchQueryTrack): string {
+  return `[${query.title}] [${query.artist}] topic`;
+}
+
+function cacheToYoutubeSearchItem(cache: {
+  youtubeId: string | null;
+  title: string | null;
+  channel: string | null;
+  thumbnail: string | null;
+}): YoutubeSearchItem | null {
+  if (!cache.youtubeId) return null;
+  return {
+    id: { videoId: cache.youtubeId },
+    snippet: {
+      title: cache.title ?? undefined,
+      channelTitle: cache.channel ?? undefined,
+      thumbnails: cache.thumbnail
+        ? { high: { url: cache.thumbnail } }
+        : undefined,
+    },
+  } as YoutubeSearchItem;
+}
+
+async function fetchVideosFromSearchQuery(
+  searchQuery: SearchQueryTrack[],
+): Promise<YoutubeSearchItem[]> {
   const videos: YoutubeSearchItem[] = [];
 
+  const TARGET_VIDEO_COUNT = 5;
+
   for (const query of searchQuery) {
+    if (videos.length >= TARGET_VIDEO_COUNT) break;
+
+    const cacheKey = getCacheKey(query);
+
+    // 1. 캐시 조회
+    const cached = await prisma.youtubeSearchCache.findUnique({
+      where: { searchQuery: cacheKey },
+    });
+
+    if (cached) {
+      const item = cacheToYoutubeSearchItem(cached);
+      if (item) videos.push(item);
+      continue;
+    }
+
+    // 2. 캐시 미스 시 YouTube API 호출
     const ytRes = await youtube.search.list({
       part: ["snippet"],
-      q: `[${query.title}] [${query.artist}] topic`,
+      q: cacheKey,
       type: ["video"],
       videoCategoryId: "10",
       videoEmbeddable: "true",
@@ -58,6 +107,25 @@ async function fetchVideosFromSearchQuery(searchQuery: SearchQueryTrack[]): Prom
       const s = scoreVideo(snippet, query);
       if (s >= MIN_SCORE_THRESHOLD) {
         videos.push(item);
+
+        // 3. 결과를 캐시에 저장
+        const videoId = item.id?.videoId ?? null;
+        await prisma.youtubeSearchCache.upsert({
+          where: { searchQuery: cacheKey },
+          create: {
+            searchQuery: cacheKey,
+            youtubeId: videoId,
+            title: snippet.title ?? null,
+            channel: snippet.channelTitle ?? null,
+            thumbnail: snippet.thumbnails?.high?.url ?? null,
+          },
+          update: {
+            youtubeId: videoId,
+            title: snippet.title ?? null,
+            channel: snippet.channelTitle ?? null,
+            thumbnail: snippet.thumbnails?.high?.url ?? null,
+          },
+        });
         break;
       }
     }
@@ -92,7 +160,7 @@ export async function getMoodPlaylist(base64Image: string) {
             text: "분석 시 현재 날씨, 계절, 절기(입춘, 경칩, 청명 등), 기념일(크리스마스, 발렌타인데이, 추석 등)도 함께 고려하고 인물사진은 인물의 기분을 고려하고 그외는 이미지의 내용을 고려하여 더욱 적절한 음악을 추천할 수 있는 키워드 형태로 만들어줘",
           },
           {
-            text: "searchQuery는 5개의 배열로 분석을 기반으로 추천할 수 있는 노래를 JSON 객체를 []{'title': '곡명', 'artist': '아티스트명'} 형태로 만들어줘",
+            text: "searchQuery는 10개의 배열로 분석을 기반으로 추천할 수 있는 노래를 JSON 객체를 []{'title': '곡명', 'artist': '아티스트명'} 형태로 만들어줘",
           },
           { text: "응답은 한글로 해줘" },
         ],
@@ -126,7 +194,7 @@ export async function getMoodPlaylistFromText(text: string) {
 사용자가 말한 내용:
 "${text}"
 
-위 내용에서 사용자의 기분, 감정, 원하는 분위기, 상황 등을 분석해주세요. 현재 날씨, 계절, 절기, 기념일도 고려하여 적절한 음악을 추천할 수 있는 searchQuery를 5개의 배열로 만들어주세요. 각 항목은 {'title': '곡명', 'artist': '아티스트명'} 형태로 작성해주세요. 응답은 한글로 해주세요.`,
+위 내용에서 사용자의 기분, 감정, 원하는 분위기, 상황 등을 분석해주세요. 현재 날씨, 계절, 절기, 기념일도 고려하여 적절한 음악을 추천할 수 있는 searchQuery를 10개의 배열로 만들어주세요. 각 항목은 {'title': '곡명', 'artist': '아티스트명'} 형태로 작성해주세요. 응답은 한글로 해주세요.`,
           },
         ],
       },

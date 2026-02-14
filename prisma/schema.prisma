@@ -1,0 +1,25 @@
+// Supabase PostgreSQL 스키마
+// 모델 추가 후: yarn prisma migrate dev
+// 기존 DB 스키마 가져오기: yarn prisma db pull
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// 유튜브 API 호출을 최소화하기 위한 캐시 테이블
+model YoutubeSearchCache {
+  id          BigInt   @id @default(autoincrement())
+  searchQuery String   @unique @map("search_query")
+  youtubeId   String?  @map("youtube_id")
+  title       String?
+  channel     String?
+  thumbnail   String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("youtube_search_cache")
+}
