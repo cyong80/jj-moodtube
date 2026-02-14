@@ -14,9 +14,14 @@ export function MoodHeader() {
     <header className="text-center space-y-2 sm:space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex-1" />
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter">
-          Mood<span className="text-primary">Tube</span>
-        </h1>
+        <div className="flex-1 flex flex-col items-center justify-center space-y-1">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter">
+            Mood<span className="text-primary">Tube</span>
+          </h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            오늘의 기분을 분석해보세요
+          </p>
+        </div>
         <div className="flex-1 flex justify-end">
           {sessionStatus === "authenticated" ? (
             <Button
