@@ -1,12 +1,14 @@
 "use client";
 
 import MusicPlayer from "@/components/MusicPlayer";
+import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
 import { Camera, LogIn, Loader2, LogOut, Mic } from "lucide-react";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { useCallback, useRef, useState } from "react";
+import { ko } from "react-day-picker/locale";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import { toast } from "sonner";
 import { getMoodPlaylist, getMoodPlaylistFromText } from "../actions";
@@ -22,6 +24,11 @@ export default function MoodTubePage() {
     "idle" | "scanning" | "listening" | "result"
   >("idle");
   const [result, setResult] = useState<any>(null);
+  // new Date() 초기값은 서버/클라이언트 시각 차이로 하이드레이트 에러 유발 → 마운트 후 설정
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  useEffect(() => {
+    setDate(new Date());
+  }, []);
 
   const handleVoiceResult = useCallback(async (text: string) => {
     setStatus("scanning");
@@ -119,39 +126,48 @@ export default function MoodTubePage() {
               ) : null}
             </div>
           </div>
-          <div className="flex justify-center gap-2">
-            <Button
-              variant={inputMode === "capture" ? "default" : "secondary"}
-              size="sm"
-              onClick={() => {
-                setInputMode("capture");
-                setStatus("idle");
-                setResult(null);
-              }}
-              className={
-                inputMode === "capture" ? "bg-primary" : "border-zinc-600"
-              }
-            >
-              <Camera className="w-4 h-4 mr-1.5" />
-              캡처
-            </Button>
-            <Button
-              variant={inputMode === "voice" ? "default" : "secondary"}
-              size="sm"
-              onClick={() => {
-                setInputMode("voice");
-                setStatus("idle");
-                setResult(null);
-              }}
-              className={
-                inputMode === "voice" ? "bg-primary" : "border-zinc-600"
-              }
-            >
-              <Mic className="w-4 h-4 mr-1.5" />
-              음성
-            </Button>
-          </div>
         </header>
+
+        <div className="flex justify-center dark">
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={setDate}
+            locale={ko}
+            className="rounded-xl sm:rounded-2xl border border-zinc-800 bg-zinc-900/80"
+          />
+        </div>
+
+        <div className="flex justify-center gap-2">
+          <Button
+            variant={inputMode === "capture" ? "default" : "secondary"}
+            size="sm"
+            onClick={() => {
+              setInputMode("capture");
+              setStatus("idle");
+              setResult(null);
+            }}
+            className={
+              inputMode === "capture" ? "bg-primary" : "border-zinc-600"
+            }
+          >
+            <Camera className="w-4 h-4 mr-1.5" />
+            캡처
+          </Button>
+          <Button
+            variant={inputMode === "voice" ? "default" : "secondary"}
+            size="sm"
+            onClick={() => {
+              setInputMode("voice");
+              setStatus("idle");
+              setResult(null);
+            }}
+            className={inputMode === "voice" ? "bg-primary" : "border-zinc-600"}
+          >
+            <Mic className="w-4 h-4 mr-1.5" />
+            음성
+          </Button>
+        </div>
 
         <div className="grid lg:grid-cols-12 gap-6 sm:gap-8 md:gap-10">
           <div className="lg:col-span-5 space-y-4 sm:space-y-6">
