@@ -134,17 +134,17 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
       {/* 기분 분석 결과 */}
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <Music2 className="w-8 h-8 text-purple-500" />
-          <h2 className="text-3xl font-bold text-white">
-            당신은 오늘 <span className="text-purple-400">{mood}</span> 하군요!
+          <Music2 className="w-8 h-8 text-primary" />
+          <h2 className="text-3xl font-bold text-foreground">
+            당신은 오늘 <span className="text-primary">{mood}</span> 하군요!
           </h2>
         </div>
-        <p className="text-zinc-300 text-base leading-relaxed">{description}</p>
+        <p className="text-muted-foreground text-base leading-relaxed">{description}</p>
       </div>
 
       {/* 유튜브 플레이어 */}
       {currentVideoId && (
-        <Card className="overflow-hidden bg-zinc-900 border-zinc-800 rounded-2xl">
+        <Card className="overflow-hidden rounded-2xl">
           <div className="aspect-video">
             <div
               ref={playerContainerRef}
@@ -153,14 +153,14 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
           </div>
           
           {/* 플레이어 컨트롤 */}
-          <div className="p-6 bg-zinc-900/50 border-t border-zinc-800">
+          <div className="p-6 bg-muted/50 border-t border-border">
             <div className="flex items-center justify-center gap-4">
               {/* 이전 곡 버튼 */}
               <Button
                 variant="outline"
                 size="icon"
                 onClick={playPreviousVideo}
-                className="h-12 w-12 rounded-full border-zinc-700 hover:border-purple-500 hover:bg-purple-500/10 transition-all"
+                className="h-12 w-12 rounded-full hover:border-primary hover:bg-primary/10 transition-all"
               >
                 <SkipBack className="h-5 w-5" />
               </Button>
@@ -170,7 +170,7 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
                 variant="default"
                 size="icon"
                 onClick={togglePlayPause}
-                className="h-16 w-16 rounded-full bg-purple-600 hover:bg-purple-700 transition-all shadow-lg shadow-purple-500/20"
+                className="h-16 w-16 rounded-full bg-primary hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
               >
                 {isPlaying ? (
                   <Pause className="h-7 w-7" fill="currentColor" />
@@ -184,7 +184,7 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
                 variant="outline"
                 size="icon"
                 onClick={playNextVideo}
-                className="h-12 w-12 rounded-full border-zinc-700 hover:border-purple-500 hover:bg-purple-500/10 transition-all"
+                className="h-12 w-12 rounded-full hover:border-primary hover:bg-primary/10 transition-all"
               >
                 <SkipForward className="h-5 w-5" />
               </Button>
@@ -192,10 +192,10 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
 
             {/* 현재 재생 중인 곡 정보 */}
             <div className="mt-4 text-center">
-              <p className="text-base font-semibold text-white line-clamp-1">
+              <p className="text-base font-semibold text-foreground line-clamp-1">
                 {videos[currentIndex]?.title}
               </p>
-              <p className="text-sm text-zinc-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 {videos[currentIndex]?.channel}
               </p>
             </div>
@@ -205,7 +205,7 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
 
       {/* 플레이리스트 */}
       <div className="space-y-3">
-        <h3 className="text-xl font-bold text-white">추천 플레이리스트</h3>
+        <h3 className="text-xl font-bold text-foreground">추천 플레이리스트</h3>
         <div className="space-y-3">
           {videos.map((video, index) => (
             <Card
@@ -214,8 +214,8 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
                 cursor-pointer transition-all duration-200 overflow-hidden
                 ${
                   currentVideoId === video.id
-                    ? "bg-purple-600/20 border-purple-500"
-                    : "bg-zinc-900 border-zinc-800 hover:border-zinc-600"
+                    ? "bg-primary/20 border-primary"
+                    : "hover:border-primary/50"
                 }
               `}
               onClick={() => handleVideoSelect(video.id, index)}
@@ -230,17 +230,17 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
                   />
                   {currentVideoId !== video.id && (
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/20 transition-colors">
-                      <Play className="w-8 h-8 text-white" fill="white" />
+                      <Play className="w-8 h-8 text-white" fill="currentColor" />
                     </div>
                   )}
                 </div>
 
                 {/* 비디오 정보 */}
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
-                  <h4 className="font-semibold text-sm line-clamp-2 mb-1 text-white">
+                  <h4 className="font-semibold text-sm line-clamp-2 mb-1 text-foreground">
                     {video.title}
                   </h4>
-                  <p className="text-xs text-zinc-400">{video.channel}</p>
+                  <p className="text-xs text-muted-foreground">{video.channel}</p>
                 </div>
               </div>
             </Card>

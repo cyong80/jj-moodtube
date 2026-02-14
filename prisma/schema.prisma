@@ -1,0 +1,53 @@
+// Supabase PostgreSQL 스키마
+// 모델 추가 후: yarn prisma migrate dev
+// 기존 DB 스키마 가져오기: yarn prisma db pull
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// 유튜브 API 호출을 최소화하기 위한 캐시 테이블
+model YoutubeSearchCache {
+  id          BigInt   @id @default(autoincrement())
+  searchQuery String   @unique @map("search_query")
+  youtubeId   String?  @map("youtube_id")
+  title       String?
+  channel     String?
+  thumbnail   String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  moodTubeResultVideos MoodTubeResultVideo[]
+
+  @@map("youtube_search_cache")
+}
+
+/// 검색한 결과를 유저별 날짜별로 저장
+model MoodTubeResult {
+  id          BigInt   @id @default(autoincrement())
+  userId      String   @map("user_id")
+  date        DateTime @db.Date
+  mood        String
+  description String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  videos MoodTubeResultVideo[]
+
+  @@map("mood_tube_result")
+}
+
+model MoodTubeResultVideo {
+  id                   BigInt   @id @default(autoincrement())
+  moodTubeResultId     BigInt   @map("mood_tube_result_id")
+  youtubeSearchCacheId BigInt   @map("youtube_search_cache_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  moodTubeResult     MoodTubeResult     @relation(fields: [moodTubeResultId], references: [id])
+  youtubeSearchCache YoutubeSearchCache @relation(fields: [youtubeSearchCacheId], references: [id])
+
+  @@map("mood_tube_result_videos")
+}
