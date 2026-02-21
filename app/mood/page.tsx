@@ -5,6 +5,7 @@ import { MoodInputCard } from "@/components/mood/MoodInputCard";
 import { MoodInputSelector } from "@/components/mood/MoodInputSelector";
 import { MoodResultArea } from "@/components/mood/MoodResultArea";
 import { SavedMoodList } from "@/components/mood/SavedMoodList";
+import { SavedMoodListSkeleton } from "@/components/mood/SavedMoodListSkeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { useMoodAnalysis } from "@/hooks/useMoodAnalysis";
@@ -33,15 +34,11 @@ export default function MoodTubePage() {
   const { inputMode, switchMode } = useMoodInputMode({
     onModeChange: reset,
   });
-  const {
-    transcript,
-    isListening,
-    volumeLevel,
-    handleVoiceClick,
-  } = useMoodVoice({
-    onAnalyze: analyzeFromAudio,
-    setStatus,
-  });
+  const { transcript, isListening, volumeLevel, handleVoiceClick } =
+    useMoodVoice({
+      onAnalyze: analyzeFromAudio,
+      setStatus,
+    });
 
   const handleCapture = useCallback(
     (getImage: () => string | null) => {
@@ -49,54 +46,61 @@ export default function MoodTubePage() {
       if (!imageSrc) return;
       analyzeFromImage(imageSrc);
     },
-    [analyzeFromImage]
+    [analyzeFromImage],
   );
 
   const handleModeChange = useCallback(
     (mode: "capture" | "voice") => {
       switchMode(mode);
     },
-    [switchMode]
+    [switchMode],
   );
 
   const [isSaving, setIsSaving] = useState(false);
   const [savedResults, setSavedResults] = useState<MoodPlaylistResult[]>([]);
+  const [isLoadingSavedResults, setIsLoadingSavedResults] = useState(false);
   const [selectedSavedResult, setSelectedSavedResult] =
     useState<MoodPlaylistResult | null>(null);
 
   const handleSave = useCallback(async () => {
     if (!result) return;
-    const saveDate = date;
+    const today = new Date();
     setIsSaving(true);
     try {
-      const { success, error } = await saveMoodResult(result, saveDate);
+      const { success, error } = await saveMoodResult(result);
       if (success) {
         toast.success("저장되었습니다.");
-        const refreshed = await getSavedMoodResults(saveDate);
+        const refreshed = await getSavedMoodResults(today);
         setSavedResults(refreshed);
+        setDate(today); // 저장 후 당일 날짜로 이동하여 새로 저장된 결과 표시
       } else {
         toast.error("저장 실패", { description: error });
       }
     } finally {
       setIsSaving(false);
     }
-  }, [result, date]);
+  }, [result, setDate]);
 
   const handleDateSelect = useCallback(
     (d: Date | undefined) => {
       setDate(d ?? new Date());
       reset();
       setSelectedSavedResult(null);
+      setSavedResults([]);
     },
-    [setDate, reset]
+    [setDate, reset],
   );
 
   useEffect(() => {
     if (sessionStatus !== "authenticated") {
       setSavedResults([]);
+      setIsLoadingSavedResults(false);
       return;
     }
-    getSavedMoodResults(date).then(setSavedResults);
+    setIsLoadingSavedResults(true);
+    getSavedMoodResults(date)
+      .then(setSavedResults)
+      .finally(() => setIsLoadingSavedResults(false));
   }, [date, sessionStatus]);
 
   const displayResult = result ?? selectedSavedResult;
@@ -116,8 +120,28 @@ export default function MoodTubePage() {
           />
         </div>
 
+        {!displayResult &&
+          sessionStatus === "authenticated" &&
+          (isLoadingSavedResults ? (
+            <div className="w-full">
+              <SavedMoodListSkeleton />
+            </div>
+          ) : (
+            savedResults.length > 0 && (
+              <div className="w-full">
+                <SavedMoodList
+                  results={savedResults}
+                  onSelect={setSelectedSavedResult}
+                />
+              </div>
+            )
+          ))}
+
         {!displayResult && (
-          <MoodInputSelector inputMode={inputMode} onModeChange={handleModeChange} />
+          <MoodInputSelector
+            inputMode={inputMode}
+            onModeChange={handleModeChange}
+          />
         )}
 
         <div className="grid lg:grid-cols-12 gap-6 sm:gap-8 md:gap-10">
@@ -127,9 +151,7 @@ export default function MoodTubePage() {
                 <Button
                   variant="outline"
                   onClick={() =>
-                    selectedSavedResult
-                      ? setSelectedSavedResult(null)
-                      : reset()
+                    selectedSavedResult ? setSelectedSavedResult(null) : reset()
                   }
                 >
                   {selectedSavedResult ? (
@@ -156,13 +178,6 @@ export default function MoodTubePage() {
                 )}
               </div>
               <MoodResultArea result={displayResult} inputMode={inputMode} />
-            </div>
-          ) : savedResults.length > 0 ? (
-            <div className="lg:col-span-12">
-              <SavedMoodList
-                results={savedResults}
-                onSelect={setSelectedSavedResult}
-              />
             </div>
           ) : (
             <>
