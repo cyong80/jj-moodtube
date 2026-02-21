@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
 export const authOptions: NextAuthOptions = {
+  debug: process.env.NODE_ENV === "development" || !!process.env.AUTH_DEBUG,
   providers: [
     GoogleProvider({
       clientId: process.env.AUTH_GOOGLE_ID ?? "",

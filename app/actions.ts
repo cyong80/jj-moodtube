@@ -272,8 +272,7 @@ description에는 말한 내용과 목소리에서 느껴진 기분을 함께 �
 }
 
 export async function saveMoodResult(
-  result: MoodPlaylistResult,
-  date: Date
+  result: MoodPlaylistResult
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const session = await getServerSession(authOptions);
@@ -282,7 +281,15 @@ export async function saveMoodResult(
     }
 
     const userId = session.user.email;
-    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const today = new Date();
+    const dateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    const todayCount = await prisma.moodTubeResult.count({
+      where: { userId, date: dateOnly },
+    });
+    if (todayCount >= 5) {
+      return { success: false, error: "하루에 5개까지만 저장할 수 있습니다." };
+    }
 
     const videosWithId = result.videos.filter(
       (v): v is typeof v & { id: string } => !!v.id
@@ -318,39 +325,19 @@ export async function saveMoodResult(
       cacheIds.push(cache.id);
     }
 
-    const existing = await prisma.moodTubeResult.findFirst({
-      where: { userId, date: dateOnly },
+    await prisma.moodTubeResult.create({
+      data: {
+        userId,
+        date: dateOnly,
+        mood: result.mood,
+        description: result.description,
+        videos: {
+          create: cacheIds.map((youtubeSearchCacheId) => ({
+            youtubeSearchCacheId,
+          })),
+        },
+      },
     });
-
-    if (existing) {
-      await prisma.moodTubeResult.update({
-        where: { id: existing.id },
-        data: {
-          mood: result.mood,
-          description: result.description,
-          videos: {
-            deleteMany: {},
-            create: cacheIds.map((youtubeSearchCacheId) => ({
-              youtubeSearchCacheId,
-            })),
-          },
-        },
-      });
-    } else {
-      await prisma.moodTubeResult.create({
-        data: {
-          userId,
-          date: dateOnly,
-          mood: result.mood,
-          description: result.description,
-          videos: {
-            create: cacheIds.map((youtubeSearchCacheId) => ({
-              youtubeSearchCacheId,
-            })),
-          },
-        },
-      });
-    }
 
     return { success: true };
   } catch (error) {
