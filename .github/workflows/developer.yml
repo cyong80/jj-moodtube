@@ -37,7 +37,14 @@ jobs:
 
       - name: Merge codebase
         run: |
-          cat $(cat files.txt) > codebase.txt
+          while IFS= read -r f; do
+            path="${f#./}"
+            echo ""
+            echo "### FILE: $path (line 1 = first line of file content below)"
+            echo "---"
+            cat "$f"
+            echo ""
+          done < files.txt > codebase.txt
 
       - name: Generate AI patch with Gemini
         run: |
@@ -45,21 +52,30 @@ jobs:
           import fs from "fs"
           import fetch from "node-fetch"
 
-          const code = fs.readFileSync("codebase.txt","utf8")
+          const files = fs.readFileSync("files.txt", "utf8").trim().split("\n").map(f => f.replace(/^\.\//, ""))
+          const code = fs.readFileSync("codebase.txt", "utf8")
 
           const prompt = `
           You are a senior software engineer.
 
-          Analyze the repository and improve the code.
+          The codebase uses this structure for each file:
+          ### FILE: path/to/file.ts
+          ---
+          <file content - line 1 is the first line below this --->
 
-          Focus on:
-          - bugs
-          - performance
-          - readability
-          - architecture
+          CRITICAL for diff: When generating @@ hunk headers (e.g. @@ -12,7 +12,7 @@), the line numbers refer to line positions WITHIN EACH FILE ONLY. Line 1 = first line of that file's content (the line right after "---"). Do NOT use line numbers from the combined document.
+          Available files: ${files.join(", ")}
 
-          Return ONLY a valid unified diff patch. No markdown, no explanation, no code blocks.
-          Start directly with "---" or "diff --git".
+          Analyze and improve the code. Focus on: bugs, performance, readability, architecture.
+
+          ALWAYS use FORMAT A (diff format often fails due to @@ line number errors):
+
+          FORMAT A - Full file replacement (REQUIRED):
+          ### WRITE_FILE path/to/file.ts
+          <complete new file content>
+          ### END_FILE
+
+          Do NOT use unified diff (@@ hunks) - it frequently fails with line number errors.
           `
 
           const inputLength = (prompt + code).length
@@ -98,51 +114,78 @@ jobs:
           const data = JSON.parse(rawText)
           let text = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
-          // 마크다운 코드 블록에서 diff 추출 (LLM이 ```diff ... ``` 또는 ``` ... ``` 형태로 감쌀 수 있음)
+          // 마크다운 코드 블록 제거
           const codeBlockMatch = text.match(/```(?:diff)?\s*([\s\S]*?)```/)
           if (codeBlockMatch && codeBlockMatch[1]) {
             text = codeBlockMatch[1].trim()
           }
-          // "diff --git" 또는 "---" 로 시작하는 부분만 추출 (앞의 설명/마크다운 제거)
-          const unifiedStart = text.search(/(?:^diff --git|^---\s)/m)
-          if (unifiedStart > 0) {
-            text = text.slice(unifiedStart)
-          } else if (unifiedStart === -1 && text.length > 0) {
-            console.warn("[DEBUG] No unified diff header found in response")
+          text = text.trim()
+
+          // FORMAT A: ### WRITE_FILE path ... ### END_FILE (diff 라인 번호 오류 회피)
+          const writeFileRegex = /###\s*WRITE_FILE\s+([^\s\n]+)\s*\n([\s\S]*?)(?=###\s*END_FILE|###\s*WRITE_FILE|$)/gi
+          let match
+          let hasWriteFiles = false
+          while ((match = writeFileRegex.exec(text)) !== null) {
+            const path = match[1].trim()
+            const content = match[2].trimEnd()
+            if (path && content !== undefined) {
+              fs.mkdirSync(path.split("/").slice(0, -1).join("/") || ".", { recursive: true })
+              fs.writeFileSync(path, content, "utf8")
+              console.log("[DEBUG] Wrote file (FORMAT A):", path)
+              hasWriteFiles = true
+            }
           }
 
-          console.log("[DEBUG] Extracted text length:", text.length)
-          if (!text) {
-            console.warn("[DEBUG] No patch text. Full response:", JSON.stringify(data).slice(0, 500))
+          let patchText = ""
+          if (!hasWriteFiles) {
+            const unifiedStart = text.search(/(?:^diff --git|^---\s)/m)
+            if (unifiedStart >= 0) patchText = unifiedStart > 0 ? text.slice(unifiedStart) : text
           }
-          console.log("[DEBUG] Patch preview (first 300 chars):", text.slice(0, 300))
 
-          fs.writeFileSync("ai.patch", text)
-
-          console.log("Patch generated")
+          fs.writeFileSync("ai.patch", patchText)
+          fs.writeFileSync("ai_used_write_file", hasWriteFiles ? "1" : "0")
+          console.log("[DEBUG] Used WRITE_FILE format:", hasWriteFiles, "| Patch length:", patchText.length)
           EOF
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-      - name: Apply patch
+      - name: Normalize patch
         run: |
           if [ -f ai.patch ]; then
+            sed -i.bak 's/\r$//' ai.patch && rm -f ai.patch.bak || true
+          fi
+
+      - name: Apply patch
+        run: |
+          if [ -f ai.patch ] && [ -s ai.patch ]; then
             echo "[DEBUG] Patch file size: $(wc -c < ai.patch) bytes"
             echo "[DEBUG] Patch content preview:"
-            head -20 ai.patch
-            if git apply --check ai.patch 2>&1; then
-              git apply ai.patch && echo "[DEBUG] Patch applied successfully"
-            else
-              echo "[DEBUG] git apply --check failed. Trying --reject --whitespace=fix..."
-              git apply --reject --whitespace=fix ai.patch 2>&1 || true
-              if [ -n "$(ls -A *.rej 2>/dev/null)" ]; then
-                echo "[DEBUG] Some hunks were rejected. *.rej files created."
-                ls -la *.rej 2>/dev/null || true
-              fi
+            head -30 ai.patch
+            applied=0
+            if git apply --check ai.patch 2>/dev/null; then
+              git apply ai.patch && echo "[DEBUG] Patch applied successfully" && applied=1
             fi
+            if [ $applied -eq 0 ] && git apply --check --ignore-space-change ai.patch 2>/dev/null; then
+              git apply --ignore-space-change ai.patch && echo "[DEBUG] Applied with --ignore-space-change" && applied=1
+            fi
+            if [ $applied -eq 0 ]; then
+              echo "[DEBUG] Trying patch -p1..."
+              patch -p1 -i ai.patch --forward 2>&1 || true
+            fi
+            if [ $applied -eq 0 ]; then
+              echo "[DEBUG] Trying git apply --reject --whitespace=fix..."
+              git apply --reject --whitespace=fix ai.patch 2>&1 || true
+            fi
+            ls -la *.rej 2>/dev/null || true
           else
             echo "[DEBUG] No ai.patch file found, skipping"
           fi
+
+      - name: Cleanup generated files
+        run: |
+          rm -f files.txt codebase.txt ai.patch ai_used_write_file ai.patch.bak
+          rm -f *.rej 2>/dev/null || true
+          echo "[DEBUG] Cleaned up temporary files"
 
       - name: Commit changes
         run: |
