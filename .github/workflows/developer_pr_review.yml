@@ -26,7 +26,7 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm install node-fetch
+        run: yarn add node-fetch
 
       - name: Run Gemini PR review
         env:

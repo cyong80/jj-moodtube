@@ -25,7 +25,7 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm install node-fetch
+        run: yarn add node-fetch
 
       - name: Collect repository code
         run: |
@@ -114,6 +114,12 @@ jobs:
           const data = JSON.parse(rawText)
           let text = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
+          if (!text || text.trim().length === 0) {
+            console.error("[ERROR] Gemini returned empty content. Raw response preview:", rawText.slice(0, 2000))
+            throw new Error("Gemini API returned empty content. Check API response structure.")
+          }
+          console.log("[DEBUG] Extracted text length:", text.length)
+
           // 마크다운 코드 블록 제거
           const codeBlockMatch = text.match(/```(?:diff)?\s*([\s\S]*?)```/)
           if (codeBlockMatch && codeBlockMatch[1]) {
@@ -140,6 +146,11 @@ jobs:
           if (!hasWriteFiles) {
             const unifiedStart = text.search(/(?:^diff --git|^---\s)/m)
             if (unifiedStart >= 0) patchText = unifiedStart > 0 ? text.slice(unifiedStart) : text
+          }
+
+          if (!hasWriteFiles && (!patchText || patchText.trim().length === 0)) {
+            console.error("[ERROR] WRITE_FILE 형식도 없고, 유효한 patch도 없습니다. text 미리보기:", text.slice(0, 500))
+            throw new Error("AI did not return valid WRITE_FILE or unified diff")
           }
 
           fs.writeFileSync("ai.patch", patchText)
@@ -185,6 +196,7 @@ jobs:
         run: |
           rm -f files.txt codebase.txt ai.patch ai_used_write_file ai.patch.bak
           rm -f *.rej 2>/dev/null || true
+          yarn remove node-fetch 2>/dev/null || true
           echo "[DEBUG] Cleaned up temporary files"
 
       - name: Commit changes
