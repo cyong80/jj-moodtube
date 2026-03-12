@@ -17,6 +17,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        if: github.event_name == 'pull_request'
+        run: git fetch origin ${{ github.event.pull_request.base.ref || 'master' }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -27,6 +33,7 @@ jobs:
         run: npm install node-fetch
 
       - name: Collect repository code
+        if: github.event_name != 'pull_request'
         run: |
           find . -type f \
           -not -path "./.git/*" \
@@ -35,10 +42,12 @@ jobs:
           > files.txt
 
       - name: Merge codebase
+        if: github.event_name != 'pull_request'
         run: |
           cat $(cat files.txt) > codebase.txt
 
       - name: Generate AI patch with Gemini
+        if: github.event_name != 'pull_request'
         run: |
           node <<'EOF'
           import fs from "fs"
@@ -109,12 +118,14 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Apply patch
+        if: github.event_name != 'pull_request'
         run: |
           if [ -f ai.patch ]; then
             git apply ai.patch || true
           fi
 
       - name: Commit changes
+        if: github.event_name != 'pull_request'
         run: |
           git config user.name "gemini-ai-bot"
           git config user.email "ai@bot.com"
@@ -126,10 +137,12 @@ jobs:
           git diff --cached --quiet || git commit -m "Gemini AI improvements"
 
       - name: Push branch
+        if: github.event_name != 'pull_request'
         run: |
           git push origin ai-improvements --force
 
       - name: Create Pull Request
+        if: github.event_name != 'pull_request'
         run: |
           gh pr create \
             --title "Gemini AI Code Improvements" \
@@ -139,15 +152,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Fetch base branch
+        if: github.event_name == 'pull_request'
+        run: git fetch origin ${{ github.event.pull_request.base.ref }}
+
       - name: Run Gemini PR review
         if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
           node <<'EOF'
           import fs from "fs"
           import fetch from "node-fetch"
           import { execSync } from "child_process"
 
-          const diff = execSync("git diff origin/master").toString()
+          const baseRef = process.env.BASE_REF || "master"
+          const diff = execSync(`git diff origin/${baseRef}`).toString()
 
           const prompt = `
           Review this pull request.
