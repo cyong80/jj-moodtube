@@ -66,7 +66,8 @@ jobs:
           - readability
           - architecture
 
-          Return only unified diff patch.
+          Return ONLY a valid unified diff patch. No markdown, no explanation, no code blocks.
+          Start directly with "---" or "diff --git".
           `
 
           const inputLength = (prompt + code).length
@@ -103,12 +104,26 @@ jobs:
           }
 
           const data = JSON.parse(rawText)
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
+          let text = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
+
+          // 마크다운 코드 블록에서 diff 추출 (LLM이 ```diff ... ``` 또는 ``` ... ``` 형태로 감쌀 수 있음)
+          const codeBlockMatch = text.match(/```(?:diff)?\s*([\s\S]*?)```/)
+          if (codeBlockMatch && codeBlockMatch[1]) {
+            text = codeBlockMatch[1].trim()
+          }
+          // "diff --git" 또는 "---" 로 시작하는 부분만 추출 (앞의 설명/마크다운 제거)
+          const unifiedStart = text.search(/(?:^diff --git|^---\s)/m)
+          if (unifiedStart > 0) {
+            text = text.slice(unifiedStart)
+          } else if (unifiedStart === -1 && text.length > 0) {
+            console.warn("[DEBUG] No unified diff header found in response")
+          }
 
           console.log("[DEBUG] Extracted text length:", text.length)
           if (!text) {
             console.warn("[DEBUG] No patch text. Full response:", JSON.stringify(data).slice(0, 500))
           }
+          console.log("[DEBUG] Patch preview (first 300 chars):", text.slice(0, 300))
 
           fs.writeFileSync("ai.patch", text)
 
@@ -121,7 +136,21 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           if [ -f ai.patch ]; then
-            git apply ai.patch || true
+            echo "[DEBUG] Patch file size: $(wc -c < ai.patch) bytes"
+            echo "[DEBUG] Patch content preview:"
+            head -20 ai.patch
+            if git apply --check ai.patch 2>&1; then
+              git apply ai.patch && echo "[DEBUG] Patch applied successfully"
+            else
+              echo "[DEBUG] git apply --check failed. Trying --reject --whitespace=fix..."
+              git apply --reject --whitespace=fix ai.patch 2>&1 || true
+              if [ -n "$(ls -A *.rej 2>/dev/null)" ]; then
+                echo "[DEBUG] Some hunks were rejected. *.rej files created."
+                ls -la *.rej 2>/dev/null || true
+              fi
+            fi
+          else
+            echo "[DEBUG] No ai.patch file found, skipping"
           fi
 
       - name: Commit changes
