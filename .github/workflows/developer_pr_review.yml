@@ -1,0 +1,87 @@
+name: Gemini AI PR Review
+
+on:
+  pull_request:
+
+jobs:
+  pr-review:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: git fetch origin ${{ github.event.pull_request.base.ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install node-fetch
+
+      - name: Run Gemini PR review
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          node <<'EOF'
+          import fs from "fs"
+          import fetch from "node-fetch"
+          import { execSync } from "child_process"
+
+          const baseRef = process.env.BASE_REF || "master"
+          const diff = execSync(`git diff origin/${baseRef}`).toString()
+
+          const prompt = `
+          Review this pull request.
+
+          Focus on:
+          - bugs
+          - security
+          - performance
+          - maintainability
+
+          Provide actionable feedback.
+          `
+
+          const res = await fetch(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" + process.env.GEMINI_API_KEY,
+            {
+              method:"POST",
+              headers:{
+                "Content-Type":"application/json"
+              },
+              body: JSON.stringify({
+                contents:[
+                  {
+                    parts:[
+                      { text: prompt + diff }
+                    ]
+                  }
+                ]
+              })
+            }
+          )
+
+          const data = await res.json()
+
+          const review = data.candidates?.[0]?.content?.parts?.[0]?.text || "No review"
+
+          fs.writeFileSync("review.txt", review)
+          EOF
+
+      - name: Post PR review comment
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+          --body "$(cat review.txt)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
