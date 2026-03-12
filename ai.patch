@@ -1,0 +1,504 @@
+--- a/components/ui/toaster.tsx
++++ b/components/ui/toaster.tsx
+@@ -10,7 +10,7 @@
+ const Toaster = ({ ...props }: ToasterProps) => {
+   const { theme = "system" } = useTheme()
+ 
+-  return (
++  const resolvedTheme = theme === 'light' || theme === 'dark' || theme === 'system' ? theme : 'system';
++  return (
+     <Sonner
+-      theme={theme as ToasterProps["theme"]}
++      theme={resolvedTheme}
+       className="toaster group"
+       icons={{
+         success: <CircleCheckIcon className="size-4" />,
+--- a/components/ui/calendar.tsx
++++ b/components/ui/calendar.tsx
+@@ -12,7 +12,7 @@
+   buttonVariant = "ghost",
+   formatters,
+   components,
+-  ...props
++  ...props
+ }: React.ComponentProps<typeof DayPicker> & {
+   buttonVariant?: React.ComponentProps<typeof Button>["variant"]
+ }) {
+-  const defaultClassNames = getDefaultClassNames()
++  const defaultClassNames = React.useMemo(getDefaultClassNames, []);
+ 
+   return (
+     <DayPicker
+--- a/components/ui/dropdown-menu.tsx
++++ b/components/ui/dropdown-menu.tsx
+@@ -99,7 +99,7 @@
+       data-slot="dropdown-menu-item"
+       data-inset={inset}
+       data-variant={variant}
+-      className={cn(
+-        "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
++      className={cn(
++        "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+         className
+       )}
+       {...props}
+@@ -115,7 +115,7 @@
+     <DropdownMenuPrimitive.CheckboxItem
+       data-slot="dropdown-menu-checkbox-item"
+       className={cn(
+-        "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
++        "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+         className
+       )}
+       checked={checked}
+@@ -142,7 +142,7 @@
+     <DropdownMenuPrimitive.RadioItem
+       data-slot="dropdown-menu-radio-item"
+       className={cn(
+-        "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
++        "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+         className
+       )}
+       {...props}
+@@ -206,7 +206,7 @@
+       data-inset={inset}
+       className={cn(
+         "focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+         className
+       )}
+       {...props}
+--- a/components/MusicPlayer.tsx
++++ b/components/MusicPlayer.tsx
+@@ -23,7 +23,6 @@
+   const [isPlaying, setIsPlaying] = useState(true);
+   const playerRef = useRef<any>(null);
+   const playerContainerRef = useRef<HTMLDivElement>(null);
+-
+-  console.log(videos);
+ 
+   // YouTube IFrame API 로드
+   useEffect(() => {
+@@ -49,7 +48,7 @@
+       playerRef.current = new window.YT.Player(playerContainerRef.current, {
+         videoId: currentVideoId,
+         playerVars: {
+-          autoplay: 1,
++          autoplay: isPlaying ? 1 : 0, // Autoplay only if current state is playing
+           enablejsapi: 1,
+         },
+         events: {
+@@ -75,19 +74,21 @@
+         playerRef.current.destroy();
+       }
+     };
+-  }, [currentVideoId]);
++  }, [currentVideoId, isPlaying]);
+ 
+   // 다음 곡 재생
+   const playNextVideo = () => {
++    if (videos.length === 0) return;
+     const nextIndex = (currentIndex + 1) % videos.length;
+     setCurrentIndex(nextIndex);
+     setCurrentVideoId(videos[nextIndex].id);
+   };
+ 
+   // 이전 곡 재생
+   const playPreviousVideo = () => {
++    if (videos.length === 0) return;
+     const prevIndex = (currentIndex - 1 + videos.length) % videos.length;
+-    setCurrentIndex(prevIndex);
++    setCurrentIndex(prevIndex < 0 ? videos.length - 1 : prevIndex); // Ensure index is not negative
+     setCurrentVideoId(videos[prevIndex].id);
+   };
+ 
+@@ -96,13 +97,14 @@
+     if (!playerRef.current) return;
+     
+     if (isPlaying) {
+-      playerRef.current.pauseVideo();
++      playerRef.current.pauseVideo(); // Pause the player
++      setIsPlaying(false); // Update state immediately
+     } else {
+-      playerRef.current.playVideo();
++      playerRef.current.playVideo(); // Play the player
++      setIsPlaying(true); // Update state immediately
+     }
+   };
+ 
+-  // 수동으로 비디오 선택
+   const handleVideoSelect = (videoId: string, index: number) => {
+     setCurrentIndex(index);
+     setCurrentVideoId(videoId);
+@@ -118,7 +120,7 @@
+         <p className="text-muted-foreground text-base leading-relaxed">{description}</p>
+       </div>
+ 
+-      {/* 유튜브 플레이어 */}
++      {/* YouTube Player */}
+       {currentVideoId && (
+         <Card className="overflow-hidden rounded-2xl">
+           <div className="aspect-video">
+@@ -213,7 +215,6 @@
+ }
+--- a/components/mood/MoodInputCard.tsx
++++ b/components/mood/MoodInputCard.tsx
+@@ -15,7 +15,6 @@
+   inputMode: InputMode;
+   status: MoodStatus;
+   result: MoodPlaylistResult | null;
+-  transcript: string;
+   isListening: boolean;
+   volumeLevel?: number;
+   isScanning: boolean;
+@@ -29,7 +28,6 @@
+   inputMode,
+   status,
+   result,
+-  transcript,
+   isListening,
+   volumeLevel = 0,
+   isScanning,
+@@ -107,7 +105,7 @@
+               })}
+             </div>
+             <p className="text-sm sm:text-base text-muted-foreground text-center px-4">
+-              말씀해 주세요...
++              말씀해주세요...
+             </p>
+           </div>
+         ) : status === "scanning" ? (
+--- a/components/mood/MoodResultArea.tsx
++++ b/components/mood/MoodResultArea.tsx
+@@ -13,17 +13,17 @@
+ export function MoodResultArea({ result, inputMode }: MoodResultAreaProps) {
+   if (result) {
+     const videoIds = result.videos
+-      .filter((v): v is typeof v & { id: string } => !!v.id)
+-      .map((v) => v.id)
+-      .join(",");
++      .filter((v): v is typeof v & { id: string } => !!v.id);
++    const videoIdsString = videoIds.map((v) => v.id).join(",");
++
+     return (
+       <div className="animate-in fade-in slide-in-from-right-4">
+         <MusicPlayer
+-          key={`${result.mood}-${videoIds}`}
+-          videos={result.videos
+-            .filter((v): v is typeof v & { id: string } => !!v.id)
++          key={`${result.id}-${videoIdsString}`}
++          videos={videoIds
+             .map((v) => ({
+-              id: v.id,
++              // Ensure all properties are defined for consistency
++              id: v.id!, // 'id' is guaranteed by the filter
+               title: v.title ?? "",
+               channel: v.channel ?? "",
+               thumbnail: v.thumbnail ?? "",
+--- a/components/mood/SavedMoodList.tsx
++++ b/components/mood/SavedMoodList.tsx
+@@ -22,7 +22,7 @@
+             (v): v is typeof v & { id: string } => !!v.id
+           );
+           return (
+-            <Card
+-              key={`${result.mood}-${index}`}
++            <Card // Use a unique ID for the key, provided by the server result.
++              key={result.id}
+               className="group cursor-pointer transition-all hover:border-primary/50 hover:bg-accent/50 overflow-hidden w-full"
+               onClick={() => onSelect(result)}
+             >
+--- a/app/(auth)/login/layout.tsx
++++ /dev/null
+@@ -1,13 +0,0 @@
+-import type { Metadata } from "next";
+-
+-export const metadata: Metadata = {
+-  title: "로그인 | MoodTube",
+-  description: "MoodTube에 로그인하세요",
+-};
+-
+-export default function LoginLayout({
+-  children,
+-}: {
+-  children: React.ReactNode;
+-}) {
+-  return children;
+-}
+--- a/app/(auth)/login/page.tsx
++++ /dev/null
+@@ -1,6 +0,0 @@
+-import { redirect } from "next/navigation";
+-
+-export default function LoginPage() {
+-  redirect("/");
+-}
+--- a/app/(mood)/page.tsx
++++ b/app/(mood)/page.tsx
+@@ -75,7 +75,6 @@
+                   inputMode={inputMode}
+                   status={status}
+                   result={result}
+-                  transcript={transcript}
+                   isListening={isListening}
+                   volumeLevel={volumeLevel}
+                   isScanning={status === "scanning"}
+--- a/app/actions.ts
++++ b/app/actions.ts
+@@ -21,15 +21,19 @@
+   title: string;
+   artist: string;
+ }
++
++if (!GEMINI_API_KEY) {
++  throw new Error("GOOGLE_GEMINI_API_KEY environment variable is not set.");
++}
++if (!process.env.YOUTUBE_API_KEY) {
++  throw new Error("YOUTUBE_API_KEY environment variable is not set.");
++}
+ 
+ const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY;
+ const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+ const youtube = google.youtube({
+   version: "v3",
+   auth: process.env.YOUTUBE_API_KEY,
+-});
+-
+-const MIN_SCORE_THRESHOLD = 50;
++});
+ 
+ function scoreVideo(
+   snippet: youtube_v3.Schema$SearchResultSnippet,
+@@ -38,8 +42,7 @@
+   let score = 0;
+   if (snippet.channelTitle?.includes("Topic")) score += 50;
+   if (/official/i.test(snippet.title ?? "")) score += 30;
+-  if (snippet.title?.includes(track.title)) score += 20;
+-  if (snippet.title?.includes(track.artist)) score += 20;
++  if (snippet.title?.includes(track.title) && snippet.title?.includes(track.artist)) score += 40; // Combined for better match
+   // duration은 search API에 없음 - videos.list에서만 조회 가능
+   const duration = (snippet as { duration?: number }).duration;
+   if (duration != null && duration >= 120 && duration <= 360) score += 20;
+@@ -128,10 +131,12 @@
+       : [];
+ 
+     return {
++      id: Date.now().toString(), // Temporary ID for client-side state
+       ...analysis,
+-      capturedImage: base64Image,
++      searchQuery: [], // searchQuery is processed into videos, no longer needed on client
++      capturedImage: base64Image, 
+       videos: rawVideos.map(mapToVideoResult),
+-    };
++    } satisfies MoodPlaylistResult; // Explicitly ensure type
+   } catch (error) {
+     console.error("Analysis Error:", error);
+     throw new Error("분석 중 오류가 발생했습니다.");
+@@ -155,9 +160,11 @@
+       : [];
+ 
+     return {
++      id: Date.now().toString(), // Temporary ID for client-side state
+       ...analysis,
+       capturedImage: null,
+       voicePrompt: text,
++      searchQuery: [], // searchQuery is processed into videos, no longer needed on client
+       videos: rawVideos.map(mapToVideoResult),
+     };
+   } catch (error) {
+@@ -194,9 +201,11 @@
+     console.log("analysis", analysis);
+     const rawVideos = Array.isArray(analysis.searchQuery)
+       ? await fetchVideosFromSearchQuery(analysis.searchQuery)
+-      : [];
+-
+-    return {
++      : []; 
++
++    return {
++      id: Date.now().toString(), // Temporary ID for client-side state
++      searchQuery: [], // searchQuery is processed into videos, no longer needed on client
+       ...analysis,
+       capturedImage: null,
+       voicePrompt: analysis.description ?? "(녹음된 음성)",
+@@ -262,6 +271,7 @@
+     });
+ 
+     return results.map((r) => ({
++      id: r.id.toString(), // Convert BigInt to string for client-side
+       mood: r.mood,
+       description: r.description,
+       searchQuery: [],
+--- a/prisma/config.ts
++++ b/prisma/config.ts
+@@ -1,9 +1,7 @@
+ // Supabase DB 연결을 위한 Prisma 설정
+ // .env.local 또는 .env에 DATABASE_URL을 설정하세요
+ import * as dotenv from "dotenv";
+ import { defineConfig } from "prisma/config";
+-
+-// Next.js 프로젝트: .env 먼저 로드 후 .env.local로 덮어쓰기
+-dotenv.config();
+-dotenv.config({ path: ".env.local" });
+ 
+ export default defineConfig({
+   schema: "prisma/schema.prisma",
+--- a/types/mood.ts
++++ b/types/mood.ts
+@@ -14,10 +14,11 @@
+ }
+ 
+ export interface MoodPlaylistResult extends MoodAnalysis {
++  id: string; // Unique ID for the result, usually from DB or generated
+   capturedImage: string | null;
+   voicePrompt?: string;
+   videos: VideoResult[];
+-  searchQuery: SearchQueryTrack[];
+ }
+--- a/hooks/useMoodVoice.ts
++++ b/hooks/useMoodVoice.ts
+@@ -34,7 +34,6 @@
+   }, [handleVoiceClickWithCheck, toggle, isSupported, isRecording]);
+ 
+   return {
+-    transcript: "", // 오디오 모드에서는 실시간 전사 없음
+     isListening: isRecording,
+     volumeLevel,
+     isSupported,
+--- a/hooks/useAudioRecorder.ts
++++ b/hooks/useAudioRecorder.ts
+@@ -79,7 +79,10 @@
+         ? "audio/webm;codecs=opus"
+         : MediaRecorder.isTypeSupported("audio/webm")
+           ? "audio/webm"
+-          : "audio/mp4";
++          : "audio/ogg"; // Fallback to OGG, MP4 might be problematic on some platforms
++
++      // Specify audio bitrate for better control over file size/quality
++      const audioBitsPerSecond = 128000; // 128 kbps
+ 
+       const recorder = new MediaRecorder(stream);
+       chunksRef.current = [];
+@@ -90,7 +93,7 @@
+       recorder.onstop = async () => {
+         stopVolumeMeter();
+         stream.getTracks().forEach((t) => t.stop());
+-        if (chunksRef.current.length > 0) {
++        if (chunksRef.current.length > 0) { // Check if any data was recorded
+           const blob = new Blob(chunksRef.current, { type: mimeType });
+           await onResult(blob, mimeType);
+         }
+@@ -103,7 +106,7 @@
+       };
+ 
+       mediaRecorderRef.current = recorder;
+-      recorder.start(100);
++      recorder.start(100); // Collects data every 100ms
+       setIsRecording(true);
+       startVolumeMeter(stream);
+       return true;
+--- a/hooks/useVoiceRecognition.ts
++++ /dev/null
+@@ -1,70 +0,0 @@
+-"use client";
+-
+-import { useCallback, useEffect, useRef, useState } from "react";
+-
+-export interface UseVoiceRecognitionOptions {
+-  onResult: (text: string) => void | Promise<void>;
+-  onEmpty?: () => void;
+-  onError?: () => void;
+-  lang?: string;
+-}
+-
+-export function useVoiceRecognition({
+-  onResult,
+-  onEmpty,
+-  onError,
+-  lang = "ko-KR",
+-}: UseVoiceRecognitionOptions) {
+-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+-  const transcriptRef = useRef("");
+-  const [transcript, setTranscript] = useState("");
+-  const [isListening, setIsListening] = useState(false);
+-
+-  const SpeechRecognitionAPI =
+-    typeof window !== "undefined" &&
+-    (window.SpeechRecognition ||
+-      (window as Window & { webkitSpeechRecognition?: typeof SpeechRecognition })
+-        .webkitSpeechRecognition);
+-
+-  const isSupported = !!SpeechRecognitionAPI;
+-
+-  const start = useCallback(() => {
+-    if (!SpeechRecognitionAPI) return false;
+-
+-    const recognition = new (SpeechRecognitionAPI as typeof SpeechRecognition)();
+-    recognition.lang = lang;
+-    recognition.continuous = false;
+-    recognition.interimResults = true;
+-
+-    recognition.onaudiostart = () => {
+-      setTranscript("");
+-      transcriptRef.current = "";
+-    };
+-
+-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+-      let finalTranscript = "";
+-      for (let i = 0; i < event.results.length; i++) {
+-        finalTranscript += event.results[i][0].transcript;
+-      }
+-      transcriptRef.current = finalTranscript;
+-      setTranscript(finalTranscript);
+-    };
+-
+-    recognition.onend = async () => {
+-      setIsListening(false);
+-      const finalText = transcriptRef.current.trim();
+-      if (finalText) {
+-        await onResult(finalText);
+-      } else {
+-        onEmpty?.();
+-      }
+-    };
+-
+-    recognition.onerror = () => {
+-      setIsListening(false);
+-      onError?.();
+-    };
+-
+-    recognitionRef.current = recognition;
+-    setIsListening(true);
+-    setTranscript("");
+-    transcriptRef.current = "";
+-    recognition.start();
+-    return true;
+-  }, [SpeechRecognitionAPI, lang, onResult, onEmpty, onError]);
+-
+-  const stop = useCallback(() => {
+-    recognitionRef.current?.abort();
+-    recognitionRef.current = null;
+-  }, []);
+-
+-  const toggle = useCallback(() => {
+-    if (isListening) {
+-      stop();
+-    } else {
+-      start();
+-    }
+-  }, [isListening, start, stop]);
+-
+-  useEffect(() => {
+-    return () => {
+-      recognitionRef.current?.abort();
+-    };
+-  }, []);
+-
+-  return {
+-    transcript,
+-    isListening,
+-    isSupported,
+-    start,
+-    stop,
+-    toggle,
+-  };
+-}
