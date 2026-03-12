@@ -1,0 +1,201 @@
+```diff
+--- a/components/MusicPlayer.tsx
++++ b/components/MusicPlayer.tsx
+@@ -28,8 +28,6 @@
+   const [currentVideoId, setCurrentVideoId] = useState<string | null>(
+     videos.length > 0 ? videos[0].id : null
+   );
+-  const [currentIndex, setCurrentIndex] = useState(0);
+   const [isPlaying, setIsPlaying] = useState(true);
+   const playerRef = useRef<any>(null);
+   const playerContainerRef = useRef<HTMLDivElement>(null);
+-
+-  console.log(videos);
+ 
+   // YouTube IFrame API 로드
+   useEffect(() => {
+@@ -46,6 +44,11 @@
+     firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+   }, []);
+ 
++  // 현재 재생 중인 비디오의 인덱스 추적
++  const currentVideoIndex = videos.findIndex(
++    (video) => video.id === currentVideoId
++  );
++
+   // 플레이어 초기화
+   useEffect(() => {
+     if (!currentVideoId || !playerContainerRef.current) return;
+@@ -79,19 +82,19 @@
+ 
+   // 다음 곡 재생
+   const playNextVideo = () => {
+-    const nextIndex = (currentIndex + 1) % videos.length;
+-    setCurrentIndex(nextIndex);
++    const nextIndex = (currentVideoIndex + 1) % videos.length;
++    if (videos.length === 0) return;
+     setCurrentVideoId(videos[nextIndex].id);
+   };
+ 
+   // 이전 곡 재생
+   const playPreviousVideo = () => {
+-    const prevIndex = (currentIndex - 1 + videos.length) % videos.length;
+-    setCurrentIndex(prevIndex);
++    const prevIndex = (currentVideoIndex - 1 + videos.length) % videos.length;
++    if (videos.length === 0) return;
+     setCurrentVideoId(videos[prevIndex].id);
+   };
+ 
+   // 재생/멈춤 토글
+   const togglePlayPause = () => {
+     if (!playerRef.current) return;
+     
+@@ -103,7 +106,7 @@
+ 
+   // 수동으로 비디오 선택
+   const handleVideoSelect = (videoId: string, index: number) => {
+-    setCurrentIndex(index);
++    // currentVideoId만 변경해도 useEffect가 감지하여 플레이어 초기화
+     setCurrentVideoId(videoId);
+   };
+ 
+@@ -165,10 +168,10 @@
+           {/* 현재 재생 중인 곡 정보 */}
+           <div className="mt-4 text-center">
+             <p className="text-base font-semibold text-foreground line-clamp-1">
+-                {videos[currentIndex]?.title}
++                {videos[currentVideoIndex]?.title}
+               </p>
+               <p className="text-sm text-muted-foreground mt-1">
+-                {videos[currentIndex]?.channel}
++                {videos[currentVideoIndex]?.channel}
+               </p>
+             </div>
+           </div>
+--- a/components/ui/calendar.tsx
++++ b/components/ui/calendar.tsx
+@@ -176,11 +176,9 @@
+   day,
+   modifiers,
+   ...props
+ }: React.ComponentProps<typeof DayButton>) {
+-  const defaultClassNames = getDefaultClassNames()
+-
+-  const ref = React.useRef<HTMLButtonElement>(null)
+-  React.useEffect(() => {
+-    if (modifiers.focused) ref.current?.focus()
+-  }, [modifiers.focused])
++  const defaultClassNames = getDefaultClassNames();
++
++  const ref = React.useRef<HTMLButtonElement>(null);
+ 
+   return (
+     <Button
+       ref={ref}
+       variant="ghost"
+       size="icon"
+       data-day={format(day.date, "yyyy-MM-dd")}
+--- a/app/actions.ts
++++ b/app/actions.ts
+@@ -13,10 +13,19 @@
+   auth: process.env.YOUTUBE_API_KEY,
+ });
+ 
++const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY;
++const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
++
++if (!GEMINI_API_KEY) {
++  throw new Error("GOOGLE_GEMINI_API_KEY environment variable is not set.");
++}
++if (!YOUTUBE_API_KEY) {
++  throw new Error("YOUTUBE_API_KEY environment variable is not set.");
++}
++
++const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
++const youtube = google.youtube({ version: "v3", auth: YOUTUBE_API_KEY });
++
+ const MIN_SCORE_THRESHOLD = 50;
+ 
+ function scoreVideo(
+   snippet: youtube_v3.Schema$SearchResultSnippet,
+   track: SearchQueryTrack,
+ ): number {
+   let score = 0;
+   if (snippet.channelTitle?.includes("Topic")) score += 50;
+   if (/official/i.test(snippet.title ?? "")) score += 30;
+   if (snippet.title?.includes(track.title)) score += 20;
+   if (snippet.title?.includes(track.artist)) score += 20;
+-  // duration은 search API에 없음 - videos.list에서만 조회 가능
+-  const duration = (snippet as { duration?: number }).duration;
+-  if (duration != null && duration >= 120 && duration <= 360) score += 20;
+   if (/cover|live|remix|shorts/i.test(snippet.title ?? "")) score -= 40;
+   return score;
+ }
+@@ -340,30 +349,36 @@
+       return { success: false, error: "저장할 영상이 없습니다." };
+     }
+ 
++    // Prepare cache IDs for all videos.
++    // This optimizes by either using an existing cacheId, finding one by youtubeId,
++    // or creating a new minimal cache entry if neither is available.
+     const cacheIds: bigint[] = [];
+     for (const video of videosWithId) {
+-      // 조회 시 이미 확보한 youtubeSearchCacheId가 있으면 재조회 생략
++      let youtubeSearchCacheId: bigint | undefined;
++
++      // 1. If youtubeSearchCacheId is already provided (from initial AI analysis and YT search), use it directly.
+       if (video.youtubeSearchCacheId != null && video.youtubeSearchCacheId !== "") {
+-        cacheIds.push(BigInt(video.youtubeSearchCacheId));
+-        continue;
++        youtubeSearchCacheId = BigInt(video.youtubeSearchCacheId);
++      } else {
++        // 2. Otherwise, try to find an existing cache entry by youtubeId.
++        const existingCache = await prisma.youtubeSearchCache.findFirst({
++          where: { youtubeId: video.id },
++        });
++
++        if (existingCache) {
++          youtubeSearchCacheId = existingCache.id;
++        } else {
++          // 3. If no existing cache, create a new minimal entry for this specific video.
++          //    Use a distinct searchQuery to denote it was saved directly.
++          const newCache = await prisma.youtubeSearchCache.create({
++            data: {
++              searchQuery: `[manual_save:${video.id}]`, // A unique key for manually saved videos
++              youtubeId: video.id,
++              title: video.title ?? null,
++              channel: video.channel ?? null,
++              thumbnail: video.thumbnail ?? null,
++            },
++          });
++          youtubeSearchCacheId = newCache.id;
++        }
+       }
+-      let cache = await prisma.youtubeSearchCache.findFirst({
+-        where: { youtubeId: video.id },
+-      });
+-      if (!cache) {
+-        const searchQuery = `[saved:${video.id}]`;
+-        cache = await prisma.youtubeSearchCache.upsert({
+-          where: { searchQuery },
+-          create: {
+-            searchQuery,
+-            youtubeId: video.id,
+-            title: video.title ?? null,
+-            channel: video.channel ?? null,
+-            thumbnail: video.thumbnail ?? null,
+-          },
+-          update: {},
+-        });
+-      }
+-      cacheIds.push(cache.id);
++
++      if (youtubeSearchCacheId) {
++        cacheIds.push(youtubeSearchCacheId);
++      } else {
++        console.warn("Could not determine youtubeSearchCacheId for video:", video);
++      }
+     }
+ 
+     await prisma.moodTubeResult.create({
+```
