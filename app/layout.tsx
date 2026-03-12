@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     default: "MoodTube",
     template: "%s | MoodTube",
   },
-  description: "기분에 맞는 음악을 추천해드립니다",
+  description: "기분에 맞는 음악을 추천해드립니다.",
 };
 
 export default function RootLayout({
