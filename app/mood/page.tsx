@@ -46,13 +46,6 @@ export default function MoodAnalysisPage() {
     [analyzeFromImage],
   );
 
-  const handleModeChange = useCallback(
-    (mode: "capture" | "voice") => {
-      switchMode(mode);
-    },
-    [switchMode],
-  );
-
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = useCallback(async () => {
@@ -78,7 +71,7 @@ export default function MoodAnalysisPage() {
 
         <MoodInputSelector
           inputMode={inputMode}
-          onModeChange={handleModeChange}
+          onModeChange={switchMode}
         />
 
         <div className="grid lg:grid-cols-12 gap-6 sm:gap-8 md:gap-10">

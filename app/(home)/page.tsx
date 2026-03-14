@@ -5,7 +5,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useCallback, useEffect } from "react";
 
 function LoginContent() {
   const { status } = useSession();
@@ -32,9 +32,23 @@ function LoginContent() {
   const callbackUrl = searchParams.get("callbackUrl") ?? "/mood";
   const error = searchParams.get("error");
 
-  const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl });
+  const errorMessages: Record<string, string> = {
+    OAuthAccountNotLinked:
+      "이 이메일은 이미 다른 소셜 계정과 연결되어 있습니다.",
+    OAuthCallback: "로그인 처리 중 오류가 발생했습니다. 다시 시도해 주세요.",
+    OAuthCreateAccount: "계정 생성 중 오류가 발생했습니다. 다시 시도해 주세요.",
+    OAuthSignin: "로그인을 시작하는 데 실패했습니다. 다시 시도해 주세요.",
+    CredentialsSignin: "인증 정보가 올바르지 않습니다.",
+    SessionRequired: "로그인이 필요합니다.",
+    Default: "로그인 중 오류가 발생했습니다. 다시 시도해 주세요.",
   };
+
+  const errorMessage =
+    error && (errorMessages[error] ?? errorMessages.Default);
+
+  const handleGoogleSignIn = useCallback(() => {
+    signIn("google", { callbackUrl });
+  }, [callbackUrl]);
 
   return (
     <main className="relative min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6">
@@ -85,12 +99,8 @@ function LoginContent() {
             로그인 없이 둘러보기
           </Link>
 
-          {error && (
-            <p className="text-red-500 text-sm">
-              {error === "OAuthAccountNotLinked"
-                ? "이 이메일은 이미 다른 소셜 계정과 연결되어 있습니다."
-                : "로그인 중 오류가 발생했습니다. 다시 시도해 주세요."}
-            </p>
+          {errorMessage && (
+            <p className="text-red-500 text-sm">{errorMessage}</p>
           )}
         </div>
 

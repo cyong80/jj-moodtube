@@ -15,9 +15,6 @@ export function MoodHeader() {
   const { status: sessionStatus } = useSession();
   const pathname = usePathname();
 
-  const iconBtnClass =
-    "h-8 w-8 shrink-0 p-0 sm:h-9 sm:w-9 sm:px-3 sm:py-2 text-muted-foreground hover:text-foreground hover:bg-accent";
-
   return (
     <header className="space-y-2 sm:space-y-4 overflow-visible">
       <div className="flex items-center gap-2 sm:gap-4">
@@ -86,7 +83,12 @@ export function MoodHeader() {
                 <span className="hidden sm:inline">로그인</span>
               </Button>
             </div>
-          ) : null}
+          ) : (
+            <div
+              className="h-8 w-20 shrink-0 rounded-md bg-muted animate-pulse sm:h-9 sm:w-24"
+              aria-hidden="true"
+            />
+          )}
         </div>
       </div>
     </header>

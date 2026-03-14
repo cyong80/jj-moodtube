@@ -31,8 +31,8 @@ export function useMoodVoice({ onAnalyze, setStatus }: UseMoodVoiceOptions) {
     [setStatus]
   );
 
-  const { isRecording, isSupported, volumeLevel, toggle } = useAudioRecorder({
-    onResult: async (blob, mimeType) => {
+  const onResult = useCallback(
+    async (blob: Blob, mimeType: string) => {
       if (blob.size < 1000) {
         setStatus("idle");
         toast.error("녹음이 너무 짧습니다", {
@@ -42,12 +42,19 @@ export function useMoodVoice({ onAnalyze, setStatus }: UseMoodVoiceOptions) {
       }
       await onAnalyze(blob, mimeType);
     },
-    onError: () => {
-      setStatus("idle");
-      toast.error("녹음 오류", {
-        description: "마이크 권한을 확인해 주세요.",
-      });
-    },
+    [onAnalyze, setStatus]
+  );
+
+  const onError = useCallback(() => {
+    setStatus("idle");
+    toast.error("녹음 오류", {
+      description: "마이크 권한을 확인해 주세요.",
+    });
+  }, [setStatus]);
+
+  const { isRecording, isSupported, volumeLevel, toggle } = useAudioRecorder({
+    onResult,
+    onError,
   });
 
   const handleVoiceClick = useCallback(() => {
