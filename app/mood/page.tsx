@@ -73,7 +73,7 @@ export default function MoodAnalysisPage() {
 
   return (
     <main className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8">
-      <div className="w-full max-w-[min(1400px,100vw)] mx-auto space-y-6 sm:space-y-8 md:space-y-10">
+      <div className="w-full max-w-[min(1400px,100%)] mx-auto space-y-6 sm:space-y-8 md:space-y-10 overflow-x-visible">
         <MoodHeader />
 
         <MoodInputSelector

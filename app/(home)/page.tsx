@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -20,7 +21,10 @@ function LoginContent() {
 
   if (status === "loading" || status === "authenticated") {
     return (
-      <main className="min-h-screen bg-background flex items-center justify-center">
+      <main className="relative min-h-screen bg-background flex items-center justify-center">
+        <div className="absolute right-4 top-4">
+          <ThemeToggle />
+        </div>
         <div className="animate-pulse text-muted-foreground">로딩 중...</div>
       </main>
     );
@@ -33,7 +37,10 @@ function LoginContent() {
   };
 
   return (
-    <main className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6">
+    <main className="relative min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md space-y-8 text-center">
         <header className="space-y-2">
           <h1 className="text-4xl sm:text-5xl font-black tracking-tighter">
