@@ -51,8 +51,8 @@ export default function MoodHistoryPage() {
 
   if (sessionStatus !== "authenticated") {
     return (
-      <main className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8">
-        <div className="w-full max-w-[min(1400px,100%)] mx-auto space-y-6 overflow-x-visible">
+      <main className="min-h-screen bg-background text-foreground px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10">
+        <div className="w-full max-w-[min(1400px,100%)] mx-auto space-y-8 sm:space-y-10 overflow-x-visible">
           <MoodHeader />
           <div className="min-h-[400px] flex flex-col items-center justify-center gap-4 text-muted-foreground text-center">
             <p>이전 내역을 보려면 로그인이 필요합니다.</p>
@@ -69,8 +69,8 @@ export default function MoodHistoryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8">
-      <div className="w-full max-w-[min(1400px,100%)] mx-auto space-y-6 sm:space-y-8 md:space-y-10 overflow-x-visible">
+    <main className="min-h-screen bg-background text-foreground px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10">
+      <div className="w-full max-w-[min(1400px,100%)] mx-auto space-y-8 sm:space-y-10 md:space-y-12 overflow-x-visible">
         <MoodHeader />
 
         <div className="flex justify-center">

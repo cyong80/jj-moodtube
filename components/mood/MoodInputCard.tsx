@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Camera, Loader2, Mic } from "lucide-react";
 import { useRef, useState } from "react";
+import { motion } from "framer-motion";
 import Webcam from "react-webcam";
 import type { MoodPlaylistResult } from "@/types/mood";
 import type { InputMode } from "@/hooks/useMoodInputMode";
@@ -65,10 +66,19 @@ export function MoodInputCard({
             />
           ) : status === "scanning" ? (
             <div className="aspect-square flex flex-col items-center justify-center gap-3 sm:gap-4">
-              <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-spin" />
-              <p className="animate-pulse text-sm sm:text-base">
+              <motion.div
+                animate={{ scale: [1, 1.08, 1], opacity: [0.8, 1, 0.8] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-spin" />
+              </motion.div>
+              <motion.p
+                className="text-sm sm:text-base text-muted-foreground"
+                animate={{ opacity: [0.6, 1, 0.6] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+              >
                 기분을 읽는 중...
-              </p>
+              </motion.p>
             </div>
           ) : (
             <img
@@ -102,7 +112,7 @@ export function MoodInputCard({
               <Mic className="w-20 h-20 sm:w-24 sm:h-24 text-primary animate-pulse" />
               <span className="absolute -inset-2 rounded-full bg-primary/20 animate-ping" />
             </div>
-            {/* 음량 레벨 비주얼 - 바 형태 */}
+            {/* 음량 레벨 비주얼 - 바 형태 (bounce) */}
             <div className="flex items-end justify-center gap-1 sm:gap-1.5 h-14 sm:h-16">
               {Array.from({ length: 10 }).map((_, i) => {
                 const barStart = i / 10;
@@ -114,10 +124,14 @@ export function MoodInputCard({
                     className="w-2 sm:w-2.5 rounded-t bg-muted/30 overflow-hidden"
                     style={{ height: `${barHeight}px` }}
                   >
-                    <div
-                      className="w-full rounded-t bg-primary transition-all duration-75 ease-out"
-                      style={{
-                        height: `${Math.max(0, fillRatio * 100)}%`,
+                    <motion.div
+                      className="w-full rounded-t bg-primary"
+                      initial={false}
+                      animate={{ height: `${Math.max(0, fillRatio * 100)}%` }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 25,
                       }}
                     />
                   </div>
@@ -128,14 +142,23 @@ export function MoodInputCard({
               말씀해 주세요...
             </p>
           </div>
-        ) : status === "scanning" ? (
-          <div className="aspect-square flex flex-col items-center justify-center gap-3 sm:gap-4">
-            <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-spin" />
-            <p className="animate-pulse text-sm sm:text-base">
-              기분을 읽는 중...
-            </p>
-          </div>
-        ) : status === "result" && result?.voicePrompt ? (
+          ) : status === "scanning" ? (
+            <div className="aspect-square flex flex-col items-center justify-center gap-3 sm:gap-4">
+              <motion.div
+                animate={{ scale: [1, 1.1, 1], opacity: [0.8, 1, 0.8] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-spin" />
+              </motion.div>
+              <motion.p
+                className="text-sm sm:text-base"
+                animate={{ opacity: [0.6, 1, 0.6] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+              >
+                기분을 읽는 중...
+              </motion.p>
+            </div>
+          ) : status === "result" && result?.voicePrompt ? (
           <div className="aspect-square flex flex-col items-center justify-center gap-4 p-6 text-muted-foreground">
             <Mic className="w-16 h-16 sm:w-20 sm:h-20 opacity-50" />
             <p className="text-sm sm:text-base text-center line-clamp-4">

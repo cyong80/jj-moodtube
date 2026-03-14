@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Play, Music2, Pause, SkipBack, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { motion, type Variants } from "framer-motion";
 
 interface Video {
   id: string;
@@ -16,6 +17,7 @@ interface MusicPlayerProps {
   videos: Video[];
   mood: string;
   description: string;
+  itemVariants?: Variants;
 }
 
 // YouTube IFrame API 타입 정의
@@ -26,7 +28,12 @@ declare global {
   }
 }
 
-export default function MusicPlayer({ videos, mood, description }: MusicPlayerProps) {
+const defaultItemVariants: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0 },
+};
+
+export default function MusicPlayer({ videos, mood, description, itemVariants = defaultItemVariants }: MusicPlayerProps) {
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(
     videos.length > 0 ? videos[0].id : null
   );
@@ -34,8 +41,6 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
   const [isPlaying, setIsPlaying] = useState(true);
   const playerRef = useRef<any>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
-
-  console.log(videos);
 
   // YouTube IFrame API 로드
   useEffect(() => {
@@ -130,20 +135,21 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
   };
 
   return (
-    <div className="space-y-6">
+    <>
       {/* 기분 분석 결과 */}
-      <div className="space-y-3">
+      <motion.div className="space-y-3" variants={itemVariants}>
         <div className="flex items-center gap-3">
           <Music2 className="w-8 h-8 text-primary" />
-          <h2 className="text-3xl font-bold text-foreground">
+          <h2 className="font-display text-3xl font-bold text-foreground">
             당신은 오늘 <span className="text-primary">{mood}</span> 하군요!
           </h2>
         </div>
         <p className="text-muted-foreground text-base leading-relaxed">{description}</p>
-      </div>
+      </motion.div>
 
       {/* 유튜브 플레이어 */}
       {currentVideoId && (
+        <motion.div variants={itemVariants}>
         <Card className="overflow-hidden rounded-2xl">
           <div className="aspect-video">
             <div
@@ -201,26 +207,36 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
             </div>
           </div>
         </Card>
+        </motion.div>
       )}
 
-      {/* 플레이리스트 */}
-      <div className="space-y-3">
-        <h3 className="text-xl font-bold text-foreground">추천 플레이리스트</h3>
-        <div className="space-y-3">
-          {videos.map((video, index) => (
-            <Card
+      {/* 플레이리스트 – 비대칭·overlap 레이아웃 */}
+      <motion.div className="space-y-4" variants={itemVariants}>
+        <h3 className="font-display text-xl font-bold text-foreground">추천 플레이리스트</h3>
+        <div className="relative pl-0 pr-4 sm:pl-2 sm:pr-6">
+          {videos.map((video, index) => {
+            const isActive = currentVideoId === video.id;
+            const offset = index % 2 === 1 ? 12 : 0;
+            return (
+            <motion.div
               key={video.id}
+              variants={itemVariants}
+              className="relative mb-[-8px] last:mb-0"
+              style={{ marginLeft: `${offset}px`, zIndex: isActive ? 10 : 5 - Math.min(index, 4) }}
+            >
+            <Card
               className={`
-                cursor-pointer transition-all duration-200 overflow-hidden
+                cursor-pointer transition-all duration-200 overflow-hidden shadow-md
+                ${isActive ? "shadow-primary/20 ring-1 ring-primary/30" : ""}
                 ${
-                  currentVideoId === video.id
-                    ? "bg-primary/20 border-primary"
-                    : "hover:border-primary/50"
+                  isActive
+                    ? "bg-primary/20 border-primary scale-[1.02] sm:scale-[1.01]"
+                    : "hover:border-primary/50 hover:translate-x-1"
                 }
               `}
               onClick={() => handleVideoSelect(video.id, index)}
             >
-              <div className="flex gap-4 p-4">
+              <div className="flex gap-4 p-4 group">
                 {/* 썸네일 */}
                 <div className="relative flex-shrink-0 w-32 h-20 rounded-lg overflow-hidden">
                   <img
@@ -244,9 +260,11 @@ export default function MusicPlayer({ videos, mood, description }: MusicPlayerPr
                 </div>
               </div>
             </Card>
-          ))}
+            </motion.div>
+          );
+          })}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </>
   );
 }

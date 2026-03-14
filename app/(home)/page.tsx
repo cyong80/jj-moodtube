@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LoadingLogo } from "@/components/LoadingLogo";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -10,6 +11,7 @@ import { Suspense, useCallback, useEffect } from "react";
 function LoginContent() {
   const { status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -17,7 +19,10 @@ function LoginContent() {
     }
   }, [status, router]);
 
-  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl")?.trim() || "/mood";
+  const handleGoogleSignIn = useCallback(() => {
+    signIn("google", { callbackUrl });
+  }, [callbackUrl]);
 
   if (status === "loading" || status === "authenticated") {
     return (
@@ -25,13 +30,12 @@ function LoginContent() {
         <div className="absolute right-4 top-4">
           <ThemeToggle />
         </div>
-        <div className="animate-pulse text-muted-foreground">로딩 중...</div>
+        <LoadingLogo />
       </main>
     );
   }
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/mood";
-  const error = searchParams.get("error");
 
+  const error = searchParams.get("error");
   const errorMessages: Record<string, string> = {
     OAuthAccountNotLinked:
       "이 이메일은 이미 다른 소셜 계정과 연결되어 있습니다.",
@@ -42,13 +46,8 @@ function LoginContent() {
     SessionRequired: "로그인이 필요합니다.",
     Default: "로그인 중 오류가 발생했습니다. 다시 시도해 주세요.",
   };
-
   const errorMessage =
     error && (errorMessages[error] ?? errorMessages.Default);
-
-  const handleGoogleSignIn = useCallback(() => {
-    signIn("google", { callbackUrl });
-  }, [callbackUrl]);
 
   return (
     <main className="relative min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6">
@@ -57,7 +56,7 @@ function LoginContent() {
       </div>
       <div className="w-full max-w-md space-y-8 text-center">
         <header className="space-y-2">
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter">
+          <h1 className="font-display text-4xl sm:text-5xl font-black tracking-tighter">
             Mood<span className="text-primary">Tube</span>
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base">
@@ -100,7 +99,7 @@ function LoginContent() {
           </Link>
 
           {errorMessage && (
-            <p className="text-red-500 text-sm">{errorMessage}</p>
+            <p className="text-destructive text-sm font-medium">{errorMessage}</p>
           )}
         </div>
 
@@ -117,7 +116,7 @@ export default function HomePage() {
     <Suspense
       fallback={
         <main className="min-h-screen bg-background flex items-center justify-center">
-          <div className="animate-pulse text-muted-foreground">로딩 중...</div>
+          <LoadingLogo />
         </main>
       }
     >

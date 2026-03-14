@@ -23,7 +23,7 @@ export function SavedMoodList({ results, onSelect }: SavedMoodListProps) {
 
   return (
     <div className="w-full space-y-6">
-      <h3 className="text-lg font-semibold text-foreground">
+      <h3 className="font-display text-lg font-semibold text-foreground">
         저장된 기록 ({results.length}건)
       </h3>
       <div className="w-full space-y-6">
@@ -42,7 +42,7 @@ export function SavedMoodList({ results, onSelect }: SavedMoodListProps) {
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
                     <Music2 className="w-8 h-8 text-primary flex-shrink-0" />
-                    <h4 className="text-xl sm:text-2xl font-bold text-foreground">
+                    <h4 className="font-display text-xl sm:text-2xl font-bold text-foreground">
                       {result.mood}
                     </h4>
                   </div>
@@ -60,7 +60,7 @@ export function SavedMoodList({ results, onSelect }: SavedMoodListProps) {
                     {videosWithId.map((video) => (
                       <div
                         key={video.id}
-                        className="flex gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                        className="group flex gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                       >
                         <div className="relative flex-shrink-0 w-20 h-14 sm:w-24 sm:h-16 rounded-md overflow-hidden">
                           {video.thumbnail ? (

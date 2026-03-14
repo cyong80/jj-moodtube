@@ -42,9 +42,9 @@ export function MoodHeader() {
           </Link>
         </div>
 
-        {/* 중앙: 로고 + 태그라인(데스크톱만) */}
-        <div className="flex min-w-0 flex-1 flex-col items-center justify-center px-1 sm:px-2">
-          <h1 className="truncate text-xl font-black tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
+        {/* 중앙: 로고 + 태그라인(데스크톱만) – 비대칭 오프셋 */}
+        <div className="flex min-w-0 flex-1 flex-col items-center justify-center px-1 sm:px-2 sm:ml-2 md:ml-4">
+          <h1 className="font-display truncate text-xl font-black tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
             Mood<span className="text-primary">Tube</span>
           </h1>
           <p className="hidden text-muted-foreground sm:block sm:text-sm md:text-base">
@@ -85,9 +85,11 @@ export function MoodHeader() {
             </div>
           ) : (
             <div
-              className="h-8 w-20 shrink-0 rounded-md bg-muted animate-pulse sm:h-9 sm:w-24"
+              className="h-8 w-20 shrink-0 rounded-md bg-muted/80 sm:h-9 sm:w-24 overflow-hidden"
               aria-hidden="true"
-            />
+            >
+              <div className="h-full w-full bg-gradient-to-r from-transparent via-primary/10 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite]" />
+            </div>
           )}
         </div>
       </div>

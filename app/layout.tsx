@@ -1,16 +1,28 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Syne, Plus_Jakarta_Sans, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+
+/** Display: 로고·헤딩용 – 기하학적, 감각적 */
+const syne = Syne({
+  variable: "--font-syne",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+/** Body: 본문·UI용 – 읽기 편하고 따뜻한 톤 */
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+/** 한글 본문 폴백 */
+const notoSansKR = Noto_Sans_KR({
+  variable: "--font-noto-kr",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -29,12 +41,14 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${syne.variable} ${plusJakartaSans.variable} ${notoSansKR.variable} antialiased`}
       >
-        <Providers>
-          {children}
-          <Toaster />
-        </Providers>
+        <div className="relative z-10 min-h-screen">
+          <Providers>
+            {children}
+            <Toaster />
+          </Providers>
+        </div>
       </body>
     </html>
   );

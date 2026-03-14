@@ -6,8 +6,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-plus-jakarta), var(--font-noto-kr), ui-sans-serif, sans-serif;
+  --font-display: var(--font-syne), var(--font-noto-kr), ui-sans-serif, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,70 +49,80 @@
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
+  --background-gradient-from: oklch(1 0.02 85);
+  --background-gradient-via: oklch(0.99 0.015 65);
+  --background-gradient-to: oklch(0.97 0.03 165);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.56 0.245 292.7);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.94 0.12 292.7);
-  --accent-foreground: oklch(0.205 0 0);
+  /* Primary: 따뜻한 앰버/테라코타 – 감정·음악 컨셉 */
+  --primary: oklch(0.65 0.19 55);
+  --primary-foreground: oklch(0.99 0.01 55);
+  --secondary: oklch(0.97 0.01 55);
+  --secondary-foreground: oklch(0.25 0.04 55);
+  --muted: oklch(0.96 0.02 55);
+  --muted-foreground: oklch(0.5 0.03 55);
+  /* Accent: 세이지/민트 – 포인트 컬러 */
+  --accent: oklch(0.93 0.07 165);
+  --accent-foreground: oklch(0.22 0.05 165);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.56 0.245 292.7);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
+  --border: oklch(0.91 0.02 55);
+  --input: oklch(0.91 0.02 55);
+  --ring: oklch(0.65 0.19 55);
+  --chart-1: oklch(0.65 0.19 55);
+  --chart-2: oklch(0.6 0.12 165);
+  --chart-3: oklch(0.55 0.15 25);
+  --chart-4: oklch(0.75 0.14 85);
+  --chart-5: oklch(0.6 0.1 200);
+  --sidebar: oklch(0.985 0.01 55);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.56 0.245 292.7);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-primary: oklch(0.65 0.19 55);
+  --sidebar-primary-foreground: oklch(0.99 0.01 55);
+  --sidebar-accent: oklch(0.93 0.05 165);
+  --sidebar-accent-foreground: oklch(0.22 0.05 165);
+  --sidebar-border: oklch(0.91 0.02 55);
+  --sidebar-ring: oklch(0.65 0.19 55);
 }
 
 .dark {
   --background: oklch(0.145 0 0);
+  --background-gradient-from: oklch(0.18 0.02 55);
+  --background-gradient-via: oklch(0.15 0.015 165);
+  --background-gradient-to: oklch(0.12 0.02 200);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.63 0.257 292.7);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  /* Primary: 다크 모드용 밝은 앰버 */
+  --primary: oklch(0.72 0.18 55);
+  --primary-foreground: oklch(0.15 0.03 55);
+  --secondary: oklch(0.27 0.03 55);
+  --secondary-foreground: oklch(0.95 0.02 55);
+  --muted: oklch(0.27 0.03 55);
+  --muted-foreground: oklch(0.65 0.03 55);
+  /* Accent: 다크 모드용 세이지 톤 */
+  --accent: oklch(0.28 0.05 165);
+  --accent-foreground: oklch(0.92 0.05 165);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
+  --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  --ring: oklch(0.72 0.18 55);
+  --chart-1: oklch(0.72 0.18 55);
+  --chart-2: oklch(0.65 0.12 165);
+  --chart-3: oklch(0.7 0.15 25);
+  --chart-4: oklch(0.75 0.14 85);
+  --chart-5: oklch(0.6 0.1 200);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-primary: oklch(0.72 0.18 55);
+  --sidebar-primary-foreground: oklch(0.15 0.03 55);
+  --sidebar-accent: oklch(0.28 0.05 165);
+  --sidebar-accent-foreground: oklch(0.92 0.05 165);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.72 0.18 55);
 }
 
 @layer base {
@@ -120,6 +130,31 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground font-sans min-h-screen;
+    background-color: var(--background);
+    background-image:
+      radial-gradient(ellipse 120% 80% at 70% 0%, var(--background-gradient-from) 0%, transparent 55%),
+      radial-gradient(ellipse 80% 60% at 20% 100%, var(--background-gradient-to) 0%, transparent 50%),
+      radial-gradient(ellipse 100% 100% at 50% 50%, var(--background-gradient-via) 0%, var(--background) 100%);
+    background-attachment: fixed;
   }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+/* Display 폰트 유틸리티 – 로고·헤딩용 */
+.font-display {
+  font-family: var(--font-display);
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
 }

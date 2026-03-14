@@ -3,11 +3,25 @@
 import MusicPlayer from "@/components/MusicPlayer";
 import type { MoodPlaylistResult } from "@/types/mood";
 import type { InputMode } from "@/hooks/useMoodInputMode";
+import { motion } from "framer-motion";
 
 interface MoodResultAreaProps {
   result: MoodPlaylistResult | null;
   inputMode: InputMode;
 }
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0 },
+};
 
 /**
  * 분석 결과 또는 플레이스홀더 영역 담당 (SRP: 결과 표시 단일 책임)
@@ -19,7 +33,12 @@ export function MoodResultArea({ result, inputMode }: MoodResultAreaProps) {
       .map((v) => v.id)
       .join(",");
     return (
-      <div className="animate-in fade-in slide-in-from-right-4">
+      <motion.div
+        className="flex flex-col gap-6"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         <MusicPlayer
           key={`${result.mood}-${videoIds}`}
           videos={result.videos
@@ -32,8 +51,9 @@ export function MoodResultArea({ result, inputMode }: MoodResultAreaProps) {
             }))}
           mood={result.mood}
           description={result.description}
+          itemVariants={itemVariants}
         />
-      </div>
+      </motion.div>
     );
   }
 
