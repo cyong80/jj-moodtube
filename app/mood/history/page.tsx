@@ -12,6 +12,7 @@ import { ko } from "react-day-picker/locale";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getSavedMoodResults } from "@/app/actions";
+import { format } from "date-fns";
 import { useSession } from "next-auth/react";
 import type { MoodPlaylistResult } from "@/types/mood";
 import Link from "next/link";
@@ -34,7 +35,8 @@ export default function MoodHistoryPage() {
       return;
     }
     setIsLoadingSavedResults(true);
-    getSavedMoodResults(date)
+    const dateStr = format(date, "yyyy-MM-dd");
+    getSavedMoodResults(dateStr)
       .then(setSavedResults)
       .finally(() => setIsLoadingSavedResults(false));
   }, [date, sessionStatus]);

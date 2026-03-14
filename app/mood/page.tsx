@@ -13,6 +13,7 @@ import { useCallback, useState } from "react";
 import { saveMoodResult } from "@/app/actions";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
+import { format } from "date-fns";
 
 /**
  * 사진/음성으로 기분 분석하는 페이지
@@ -58,7 +59,8 @@ export default function MoodAnalysisPage() {
     if (!result) return;
     setIsSaving(true);
     try {
-      const { success, error } = await saveMoodResult(result);
+      const dateStr = format(new Date(), "yyyy-MM-dd");
+      const { success, error } = await saveMoodResult(result, dateStr);
       if (success) {
         toast.success("저장되었습니다.");
       } else {
