@@ -15,21 +15,23 @@ const youtube = google.youtube({
   auth: process.env.YOUTUBE_API_KEY,
 });
 
-const MIN_SCORE_THRESHOLD = 50;
+const MIN_SCORE_THRESHOLD = 35;
 
 function scoreVideo(
   snippet: youtube_v3.Schema$SearchResultSnippet,
   track: SearchQueryTrack,
 ): number {
   let score = 0;
-  if (snippet.channelTitle?.includes("Topic")) score += 50;
-  if (/official/i.test(snippet.title ?? "")) score += 30;
-  if (snippet.title?.includes(track.title)) score += 20;
-  if (snippet.title?.includes(track.artist)) score += 20;
+  if (snippet.channelTitle?.includes("Topic")) score += 40;
+  if (/official/i.test(snippet.title ?? "")) score += 25;
+  if (snippet.title?.includes(track.title)) score += 25;
+  if (snippet.title?.includes(track.artist)) score += 25;
   // duration은 search API에 없음 - videos.list에서만 조회 가능
   const duration = (snippet as { duration?: number }).duration;
-  if (duration != null && duration >= 120 && duration <= 360) score += 20;
-  if (/cover|live|remix|shorts/i.test(snippet.title ?? "")) score -= 40;
+  if (duration != null && duration >= 120 && duration <= 360) score += 15;
+  // cover/live/remix는 다양성에 기여 - 패널티 완화
+  if (/shorts/i.test(snippet.title ?? "")) score -= 30;
+  if (/cover|live|remix/i.test(snippet.title ?? "")) score -= 15;
   return score;
 }
 
@@ -76,7 +78,7 @@ async function fetchVideosFromSearchQuery(
 ): Promise<VideoWithCacheId[]> {
   const videos: VideoWithCacheId[] = [];
 
-  const TARGET_VIDEO_COUNT = 5;
+  const TARGET_VIDEO_COUNT = 10;
 
   for (const query of searchQuery) {
     if (videos.length >= TARGET_VIDEO_COUNT) break;
@@ -159,17 +161,21 @@ export async function getMoodPlaylist(base64Image: string) {
         role: "user",
         parts: [
           {
-            text: "당신은 전문 음악 DJ입니다. 이미지를 분석하고 반드시 다음 형식의 JSON 객체를 반환하세요: { 'mood': 'string', 'description': 'string', 'searchQuery': []{'title': '곡명', 'artist': '아티스트명'} }",
+            text: `당신은 전문 음악 큐레이터입니다. 이미지를 분석하고 반드시 다음 형식의 JSON 객체를 반환하세요: { 'mood': 'string', 'description': 'string', 'searchQuery': [{'title': '곡명', 'artist': '아티스트명'}] }`,
           },
           { inlineData: { data: imageData, mimeType: "image/jpeg" } },
           { text: "이 사람의 감정과 주변 환경의 분위기를 분석해주세요." },
           {
-            text: "분석 시 현재 날씨, 계절, 절기(입춘, 경칩, 청명 등), 기념일(크리스마스, 발렌타인데이, 추석 등)도 함께 고려하고 인물사진은 인물의 기분을 고려하고 그외는 이미지의 내용을 고려하여 더욱 적절한 음악을 추천할 수 있는 키워드 형태로 만들어줘",
+            text: `분석 시 현재 날씨, 계절, 절기(입춘, 경칩, 청명 등), 기념일(크리스마스, 발렌타인데이, 추석 등)도 함께 고려하세요. 인물사진은 인물의 기분, 그 외는 이미지 내용을 고려하세요.
+
+searchQuery는 18~20곡의 배열로, **가능한 한 다양한** 노래를 추천해주세요:
+- 장르 다양화: 팝, 발라드, 록, 인디, R&B, 힙합, 재즈, 클래식, K-pop, 트로트, 일렉트로닉 등 섞어서
+- 시대 다양화: 80~90년대 곡, 2000년대, 2010년대, 최신 곡을 골고루
+- 언어 다양화: 한국어, 영어, 일본어 등 혼합
+- 아티스트 다양화: 메이저·인디·대중·닉치 아티스트 혼합
+- 분위기 변주: 같은 기분이라도 밝은 곡·잔잔한 곡·신나는 곡 등 다양한 톤
+중복하거나 비슷한 느낌의 곡은 피하고, 한 아티스트당 1곡 이하로 추천하세요. 응답은 한글로 해주세요.`,
           },
-          {
-            text: "searchQuery는 10개의 배열로 분석을 기반으로 추천할 수 있는 노래를 JSON 객체를 []{'title': '곡명', 'artist': '아티스트명'} 형태로 만들어줘",
-          },
-          { text: "응답은 한글로 해줘" },
         ],
       },
     ]);
@@ -196,12 +202,20 @@ export async function getMoodPlaylistFromText(text: string) {
         role: "user",
         parts: [
           {
-            text: `당신은 전문 음악 DJ입니다. 사용자의 음성/텍스트를 분석하고 반드시 다음 형식의 JSON 객체를 반환하세요: { 'mood': 'string', 'description': 'string', 'searchQuery': [{'title': '곡명', 'artist': '아티스트명'}] }
+            text: `당신은 전문 음악 큐레이터입니다. 사용자의 음성/텍스트를 분석하고 반드시 다음 형식의 JSON 객체를 반환하세요: { 'mood': 'string', 'description': 'string', 'searchQuery': [{'title': '곡명', 'artist': '아티스트명'}] }
 
 사용자가 말한 내용:
 "${text}"
 
-위 내용에서 사용자의 기분, 감정, 원하는 분위기, 상황 등을 분석해주세요. 현재 날씨, 계절, 절기, 기념일도 고려하여 적절한 음악을 추천할 수 있는 searchQuery를 10개의 배열로 만들어주세요. 각 항목은 {'title': '곡명', 'artist': '아티스트명'} 형태로 작성해주세요. 응답은 한글로 해주세요.`,
+위 내용에서 사용자의 기분, 감정, 원하는 분위기, 상황 등을 분석해주세요. 현재 날씨, 계절, 절기, 기념일도 고려하세요.
+
+searchQuery는 18~20곡의 배열로, **가능한 한 다양한** 노래를 추천해주세요:
+- 장르 다양화: 팝, 발라드, 록, 인디, R&B, 힙합, 재즈, K-pop, 일렉트로닉 등 섞어서
+- 시대 다양화: 80~90년대, 2000년대, 최신 곡을 골고루
+- 언어 다양화: 한국어, 영어, 일본어 등 혼합
+- 아티스트 다양화: 메이저·인디·대중·닉치 아티스트 혼합
+- 분위기 변주: 같은 기분이라도 밝은 곡·잔잔한 곡·신나는 곡 등 다양한 톤
+중복하거나 비슷한 느낌의 곡은 피하고, 한 아티스트당 1곡 이하로 추천하세요. 응답은 한글로 해주세요.`,
           },
         ],
       },
@@ -238,7 +252,7 @@ export async function getMoodPlaylistFromAudio(
         role: "user",
         parts: [
           {
-            text: `당신은 전문 음악 DJ입니다. 이 오디오는 사용자가 녹음한 음성입니다.
+            text: `당신은 전문 음악 큐레이터입니다. 이 오디오는 사용자가 녹음한 음성입니다.
 오디오에서 다음을 분석해주세요:
 1. 말한 내용(전사)
 2. 목소리 톤, 감정, 기분 (말하는 방식에서 느껴지는 감정)
@@ -246,15 +260,20 @@ export async function getMoodPlaylistFromAudio(
 
 반드시 다음 형식의 JSON 객체만 반환하세요: { 'mood': 'string', 'description': 'string', 'searchQuery': [{'title': '곡명', 'artist': '아티스트명'}] }
 description에는 말한 내용과 목소리에서 느껴진 기분을 함께 설명해주세요.
-현재 날씨, 계절, 절기, 기념일도 고려하여 적절한 음악을 추천할 수 있는 searchQuery를 10개의 배열로 만들어주세요.
-각 항목은 {'title': '곡명', 'artist': '아티스트명'} 형태로 작성해주세요. 응답은 한글로 해주세요.`,
+
+searchQuery는 18~20곡의 배열로, **가능한 한 다양한** 노래를 추천해주세요:
+- 장르 다양화: 팝, 발라드, 록, 인디, R&B, 힙합, 재즈, K-pop 등 섞어서
+- 시대 다양화: 80~90년대, 2000년대, 최신 곡을 골고루
+- 언어 다양화: 한국어, 영어, 일본어 등 혼합
+- 아티스트 다양화: 메이저·인디·대중 아티스트 혼합
+- 분위기 변주: 같은 기분이라도 밝은 곡·잔잔한 곡·신나는 곡 등 다양한 톤
+중복하거나 비슷한 느낌의 곡은 피하고, 한 아티스트당 1곡 이하로 추천하세요. 응답은 한글로 해주세요.`,
           },
           { inlineData: { data, mimeType: acceptedMime } },
         ],
       },
     ]);
 
-    console.log("analysis", analysis);
     const rawVideos = Array.isArray(analysis.searchQuery)
       ? await fetchVideosFromSearchQuery(analysis.searchQuery)
       : [];
