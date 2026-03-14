@@ -27,6 +27,7 @@ export default function MoodHistoryPage() {
   const [isLoadingSavedResults, setIsLoadingSavedResults] = useState(false);
   const [selectedSavedResult, setSelectedSavedResult] =
     useState<MoodPlaylistResult | null>(null);
+  const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
 
   useEffect(() => {
     if (sessionStatus !== "authenticated") {
@@ -44,7 +45,13 @@ export default function MoodHistoryPage() {
   const handleDateSelect = (d: Date | undefined) => {
     setDate(d ?? new Date());
     setSelectedSavedResult(null);
+    setSelectedTrackIndex(0);
     setSavedResults([]);
+  };
+
+  const handleSelectResult = (result: MoodPlaylistResult, trackIndex?: number) => {
+    setSelectedSavedResult(result);
+    setSelectedTrackIndex(trackIndex ?? 0);
   };
 
   const displayResult = selectedSavedResult;
@@ -73,31 +80,8 @@ export default function MoodHistoryPage() {
       <div className="w-full max-w-[min(1400px,100%)] mx-auto space-y-8 sm:space-y-10 md:space-y-12 overflow-x-visible">
         <MoodHeader />
 
-        <div className="flex justify-center">
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={handleDateSelect}
-            locale={ko}
-            className="rounded-xl sm:rounded-2xl border border-border bg-card"
-          />
-        </div>
-
-        {!displayResult &&
-          (isLoadingSavedResults ? (
-            <div className="w-full">
-              <SavedMoodListSkeleton />
-            </div>
-          ) : (
-            <div className="w-full">
-              <SavedMoodList
-                results={savedResults}
-                onSelect={setSelectedSavedResult}
-              />
-            </div>
-          ))}
-
-        {displayResult && (
+        {displayResult ? (
+          /* 재생 페이지: 달력 없음, 전체 화면으로 재생 */
           <div className="space-y-4">
             <div className="flex justify-end">
               <Button
@@ -111,7 +95,34 @@ export default function MoodHistoryPage() {
             <MoodResultArea
               result={displayResult}
               inputMode="capture"
+              initialTrackIndex={selectedTrackIndex}
             />
+          </div>
+        ) : (
+          /* 목록 페이지: 달력 + 리스트 */
+          <div className="flex flex-col md:flex-row md:gap-8 md:items-start">
+            {/* 좌측: 달력 (목록에서만 표시) */}
+            <div className="w-full max-md:block md:w-[320px] md:shrink-0 md:sticky md:top-6 md:self-start md:overflow-hidden">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={handleDateSelect}
+                locale={ko}
+                className="max-md:!w-full rounded-xl sm:rounded-2xl border border-border bg-card p-3 md:p-4 md:[--cell-size:2.25rem] lg:[--cell-size:2.5rem] [&_.rdp-caption_label]:md:text-sm [&_.rdp-weekday]:md:text-[0.7rem] md:max-w-full"
+              />
+            </div>
+
+            {/* 우측: 리스트 */}
+            <div className="flex-1 min-w-0 w-full mt-6 md:mt-0">
+              {isLoadingSavedResults ? (
+                <SavedMoodListSkeleton />
+              ) : (
+                <SavedMoodList
+                  results={savedResults}
+                  onSelect={handleSelectResult}
+                />
+              )}
+            </div>
           </div>
         )}
       </div>

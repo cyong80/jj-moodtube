@@ -18,6 +18,7 @@ interface MusicPlayerProps {
   mood: string;
   description: string;
   itemVariants?: Variants;
+  initialTrackIndex?: number;
 }
 
 // YouTube IFrame API 타입 정의
@@ -33,11 +34,12 @@ const defaultItemVariants: Variants = {
   visible: { opacity: 1, y: 0 },
 };
 
-export default function MusicPlayer({ videos, mood, description, itemVariants = defaultItemVariants }: MusicPlayerProps) {
+export default function MusicPlayer({ videos, mood, description, itemVariants = defaultItemVariants, initialTrackIndex = 0 }: MusicPlayerProps) {
+  const safeInitialIndex = Math.min(Math.max(0, initialTrackIndex), Math.max(0, videos.length - 1));
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(
-    videos.length > 0 ? videos[0].id : null
+    videos.length > 0 ? videos[safeInitialIndex].id : null
   );
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(safeInitialIndex);
   const [isPlaying, setIsPlaying] = useState(true);
   const playerRef = useRef<any>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);

@@ -1,32 +1,40 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Music2, Play } from "lucide-react";
+import { ChevronRight, Disc3, Sparkles } from "lucide-react";
 import type { MoodPlaylistResult } from "@/types/mood";
 
 interface SavedMoodListProps {
   results: MoodPlaylistResult[];
-  onSelect: (result: MoodPlaylistResult) => void;
+  onSelect: (result: MoodPlaylistResult, trackIndex?: number) => void;
 }
 
 /**
- * 저장된 기분 기록 목록 (날짜별 조회) - 가로 전체, 모든 정보 표시
+ * 저장된 기분 기록 목록 - 라이너 노트 스타일, 모든 곡 노출 + 아이콘
  */
 export function SavedMoodList({ results, onSelect }: SavedMoodListProps) {
   if (results.length === 0) {
     return (
-      <div className="h-64 sm:h-80 border-2 border-dashed border-border rounded-xl sm:rounded-2xl flex items-center justify-center text-muted-foreground text-sm sm:text-base px-4 text-center">
-        이 날짜에 저장된 기록이 없습니다.
+      <div className="h-48 border-2 border-dashed border-border/50 rounded-2xl flex flex-col items-center justify-center gap-3 text-muted-foreground px-4 text-center">
+        <Disc3 className="w-10 h-10 opacity-30" strokeWidth={1.5} />
+        <p className="text-sm">이 날짜에 저장된 기록이 없습니다.</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-6">
-      <h3 className="font-display text-lg font-semibold text-foreground">
-        저장된 기록 ({results.length}건)
-      </h3>
-      <div className="w-full space-y-6">
+    <div className="w-full space-y-5">
+      <div className="flex items-baseline gap-2">
+        <Sparkles className="w-4 h-4 text-primary shrink-0" strokeWidth={2} />
+        <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          저장된 기록
+        </h3>
+        <span className="text-xs font-mono text-muted-foreground/80 tabular-nums">
+          {results.length}건
+        </span>
+      </div>
+
+      <div className="w-full space-y-4">
         {results.map((result, index) => {
           const videosWithId = result.videos.filter(
             (v): v is typeof v & { id: string } => !!v.id
@@ -34,62 +42,47 @@ export function SavedMoodList({ results, onSelect }: SavedMoodListProps) {
           return (
             <Card
               key={`${result.mood}-${index}`}
-              className="group cursor-pointer transition-all hover:border-primary/50 hover:bg-accent/50 overflow-hidden w-full"
-              onClick={() => onSelect(result)}
+              className="group cursor-pointer overflow-hidden w-full transition-all duration-300 hover:border-primary/50 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.2)] border-l-[3px] border-l-primary/40"
+              onClick={() => onSelect(result, undefined)}
             >
-              <div className="p-6 sm:p-8 space-y-6">
-                {/* 기분 & 설명 */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <Music2 className="w-8 h-8 text-primary flex-shrink-0" />
-                    <h4 className="font-display text-xl sm:text-2xl font-bold text-foreground">
-                      {result.mood}
-                    </h4>
-                  </div>
-                  <p className="text-muted-foreground text-base leading-relaxed whitespace-pre-wrap">
-                    {result.description}
-                  </p>
+              <div className="relative p-4 sm:p-5 pl-5 sm:pl-6">
+                {/* hover 시 좌측 그라데이션 강조 */}
+                <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-primary/80 via-primary/50 to-primary/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -ml-[1px]" />
+                {/* 기분 제목 + 화살표 */}
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <h4 className="font-display text-lg sm:text-xl font-bold text-foreground truncate">
+                    {result.mood}
+                  </h4>
+                  <ChevronRight className="w-5 h-5 text-primary/60 shrink-0 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
                 </div>
 
-                {/* 플레이리스트 전체 */}
-                <div className="space-y-3">
-                  <h5 className="text-sm font-semibold text-muted-foreground">
-                    추천 플레이리스트 ({videosWithId.length}곡)
-                  </h5>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {videosWithId.map((video) => (
-                      <div
-                        key={video.id}
-                        className="group flex gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                      >
-                        <div className="relative flex-shrink-0 w-20 h-14 sm:w-24 sm:h-16 rounded-md overflow-hidden">
-                          {video.thumbnail ? (
-                            <img
-                              src={video.thumbnail}
-                              alt=""
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-muted">
-                              <Music2 className="w-6 h-6 text-muted-foreground" />
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Play className="w-6 h-6 text-white" fill="currentColor" />
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0 flex flex-col justify-center">
-                          <p className="font-medium text-sm text-foreground line-clamp-2">
-                            {video.title ?? "-"}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                            {video.channel ?? "-"}
-                          </p>
-                        </div>
+                {/* 트랙리스트: 모든 곡 + Disc3 아이콘 */}
+                <ul className="space-y-2">
+                  {videosWithId.map((video, trackIndex) => (
+                    <li
+                      key={video.id}
+                      className="flex items-center gap-3 py-1.5 px-2 -mx-2 rounded-md group/track hover:bg-muted/60 transition-colors duration-150 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelect(result, trackIndex);
+                      }}
+                    >
+                      <span className="flex items-center justify-center w-5 h-5 shrink-0 rounded-full bg-primary/10 text-primary text-[10px] font-mono font-semibold tabular-nums group-hover/track:bg-primary/20 transition-colors">
+                        {String(trackIndex + 1).padStart(2, "0")}
+                      </span>
+                      <Disc3 className="w-3.5 h-3.5 text-primary/50 shrink-0" strokeWidth={2} />
+                      <div className="flex-1 min-w-0 truncate">
+                        <span className="font-medium text-foreground/95 text-sm">
+                          {video.channel ?? "-"}
+                        </span>
+                        <span className="mx-1.5 text-muted-foreground/50 text-xs">·</span>
+                        <span className="text-sm text-muted-foreground truncate">
+                          {video.title ?? "-"}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </Card>
           );

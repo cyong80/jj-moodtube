@@ -8,6 +8,8 @@ import { motion } from "framer-motion";
 interface MoodResultAreaProps {
   result: MoodPlaylistResult | null;
   inputMode: InputMode;
+  /** 저장된 기록에서 특정 곡 클릭 시 해당 곡부터 재생 */
+  initialTrackIndex?: number;
 }
 
 const containerVariants = {
@@ -26,7 +28,7 @@ const itemVariants = {
 /**
  * 분석 결과 또는 플레이스홀더 영역 담당 (SRP: 결과 표시 단일 책임)
  */
-export function MoodResultArea({ result, inputMode }: MoodResultAreaProps) {
+export function MoodResultArea({ result, inputMode, initialTrackIndex }: MoodResultAreaProps) {
   if (result) {
     const videoIds = result.videos
       .filter((v): v is typeof v & { id: string } => !!v.id)
@@ -40,7 +42,7 @@ export function MoodResultArea({ result, inputMode }: MoodResultAreaProps) {
         animate="visible"
       >
         <MusicPlayer
-          key={`${result.mood}-${videoIds}`}
+          key={`${result.mood}-${videoIds}-${initialTrackIndex ?? 0}`}
           videos={result.videos
             .filter((v): v is typeof v & { id: string } => !!v.id)
             .map((v) => ({
@@ -52,6 +54,7 @@ export function MoodResultArea({ result, inputMode }: MoodResultAreaProps) {
           mood={result.mood}
           description={result.description}
           itemVariants={itemVariants}
+          initialTrackIndex={initialTrackIndex}
         />
       </motion.div>
     );

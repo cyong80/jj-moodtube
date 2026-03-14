@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { LogIn, LogOut, Camera, History } from "lucide-react";
+import { User, LogOut, Camera, History } from "lucide-react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -66,7 +66,7 @@ export function MoodHeader() {
                 className="shrink-0 rounded-md border-border/50 bg-transparent hover:bg-accent/50 hover:border-border"
                 aria-label="로그아웃"
               >
-                <LogOut className="h-4 w-4 sm:mr-1.5" />
+                <LogOut className="h-4 w-4 sm:mr-1.5 text-muted-foreground" strokeWidth={2} />
                 <span className="hidden sm:inline">로그아웃</span>
               </Button>
             </div>
@@ -79,7 +79,7 @@ export function MoodHeader() {
                 className="shrink-0 rounded-md border-border/50 bg-transparent hover:bg-accent/50 hover:border-border"
                 aria-label="로그인"
               >
-                <LogIn className="h-4 w-4 sm:mr-1.5" />
+                <User className="h-4 w-4 sm:mr-1.5 text-primary" strokeWidth={2} />
                 <span className="hidden sm:inline">로그인</span>
               </Button>
             </div>
