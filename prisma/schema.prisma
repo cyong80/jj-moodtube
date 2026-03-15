@@ -22,6 +22,7 @@ model YoutubeSearchCache {
   createdAt   DateTime @default(now()) @map("created_at")
 
   moodTubeResultVideos MoodTubeResultVideo[]
+  likes               MoodTubeLike[]
 
   @@map("youtube_search_cache")
 }
@@ -50,4 +51,17 @@ model MoodTubeResultVideo {
   youtubeSearchCache YoutubeSearchCache @relation(fields: [youtubeSearchCacheId], references: [id])
 
   @@map("mood_tube_result_videos")
+}
+
+/// 유저가 영상에 표시한 좋아요
+model MoodTubeLike {
+  id                   BigInt   @id @default(autoincrement())
+  userId               String   @map("user_id")
+  youtubeSearchCacheId BigInt   @map("youtube_search_cache_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  youtubeSearchCache YoutubeSearchCache @relation(fields: [youtubeSearchCacheId], references: [id])
+
+  @@unique([userId, youtubeSearchCacheId])
+  @@map("mood_tube_like")
 }

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { User, LogOut, Camera, History } from "lucide-react";
+import { User, LogOut, Camera, History, Heart } from "lucide-react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -38,6 +38,16 @@ export function MoodHeader() {
             >
               <History className="h-4 w-4 sm:mr-1.5" />
               <span className="hidden sm:inline">이전 내역</span>
+            </Button>
+          </Link>
+          <Link href="/mood/likes" aria-label="좋아요한 노래">
+            <Button
+              variant={pathname === "/mood/likes" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-8 w-8 p-0 sm:h-auto sm:w-auto sm:px-3 sm:py-2 text-muted-foreground hover:text-foreground"
+            >
+              <Heart className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">좋아요</span>
             </Button>
           </Link>
         </div>

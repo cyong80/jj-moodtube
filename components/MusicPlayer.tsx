@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
-import { Play, Music2, Pause, SkipBack, SkipForward } from "lucide-react";
+import { Play, Music2, Pause, SkipBack, SkipForward, Heart } from "lucide-react";
+import { toggleLike, getLikedCacheIds } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { motion, type Variants } from "framer-motion";
 
@@ -11,6 +12,8 @@ interface Video {
   title: string;
   channel: string;
   thumbnail: string;
+  /** 좋아요 기능에 필요. 없으면 버튼 미표시 */
+  youtubeSearchCacheId?: string;
 }
 
 interface MusicPlayerProps {
@@ -43,6 +46,13 @@ export default function MusicPlayer({ videos, mood, description, itemVariants = 
   const [isPlaying, setIsPlaying] = useState(true);
   const playerRef = useRef<any>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
+  const [likedCacheIds, setLikedCacheIds] = useState<Set<string>>(new Set());
+  const [likePendingId, setLikePendingId] = useState<string | null>(null);
+
+  // 초기 좋아요 상태 로드
+  useEffect(() => {
+    getLikedCacheIds().then((ids) => setLikedCacheIds(new Set(ids)));
+  }, [videos.length]);
 
   // YouTube IFrame API 로드
   useEffect(() => {
@@ -134,6 +144,22 @@ export default function MusicPlayer({ videos, mood, description, itemVariants = 
   const handleVideoSelect = (videoId: string, index: number) => {
     setCurrentIndex(index);
     setCurrentVideoId(videoId);
+  };
+
+  const handleLikeClick = async (e: React.MouseEvent, cacheId: string) => {
+    e.stopPropagation();
+    if (likePendingId) return;
+    setLikePendingId(cacheId);
+    const res = await toggleLike(cacheId);
+    setLikePendingId(null);
+    if (res.success) {
+      setLikedCacheIds((prev) => {
+        const next = new Set(prev);
+        if (res.liked) next.add(cacheId);
+        else next.delete(cacheId);
+        return next;
+      });
+    }
   };
 
   return (
@@ -260,6 +286,22 @@ export default function MusicPlayer({ videos, mood, description, itemVariants = 
                   </h4>
                   <p className="text-xs text-muted-foreground">{video.channel}</p>
                 </div>
+
+                {/* 좋아요 버튼 */}
+                {video.youtubeSearchCacheId && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 h-9 w-9 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    onClick={(e) => handleLikeClick(e, video.youtubeSearchCacheId!)}
+                    disabled={likePendingId === video.youtubeSearchCacheId}
+                  >
+                    <Heart
+                      className="h-5 w-5"
+                      fill={likedCacheIds.has(video.youtubeSearchCacheId) ? "currentColor" : "none"}
+                    />
+                  </Button>
+                )}
               </div>
             </Card>
             </motion.div>

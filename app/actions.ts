@@ -424,10 +424,112 @@ export async function getSavedMoodResults(
           title: c.title ?? undefined,
           channel: c.channel ?? undefined,
           thumbnail: c.thumbnail ?? undefined,
+          youtubeSearchCacheId: c.id.toString(),
         })),
     }));
   } catch (error) {
     console.error("Get Saved Mood Error:", error);
     return [];
+  }
+}
+
+/** 좋아요한 노래 목록 전체 (플레이리스트용) */
+export async function getLikedVideos(): Promise<MoodPlaylistResult | null> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) return null;
+
+    const likes = await prisma.moodTubeLike.findMany({
+      where: { userId: session.user.email },
+      include: {
+        youtubeSearchCache: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const videos = likes
+      .map((l) => l.youtubeSearchCache)
+      .filter((c): c is NonNullable<typeof c> => c != null && c.youtubeId != null)
+      .map((c) => ({
+        id: c.youtubeId ?? undefined,
+        title: c.title ?? undefined,
+        channel: c.channel ?? undefined,
+        thumbnail: c.thumbnail ?? undefined,
+        youtubeSearchCacheId: c.id.toString(),
+      }));
+
+    if (videos.length === 0) return null;
+
+    return {
+      mood: "좋아요한 노래",
+      description: "마음에 든 곡들을 모아봤어요",
+      searchQuery: [],
+      capturedImage: null,
+      videos,
+    };
+  } catch (error) {
+    console.error("Get Liked Videos Error:", error);
+    return null;
+  }
+}
+
+/** 현재 사용자가 좋아요한 youtube_search_cache.id 목록 */
+export async function getLikedCacheIds(): Promise<string[]> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) return [];
+
+    const likes = await prisma.moodTubeLike.findMany({
+      where: { userId: session.user.email },
+      select: { youtubeSearchCacheId: true },
+    });
+    return likes.map((l) => l.youtubeSearchCacheId.toString());
+  } catch (error) {
+    console.error("Get Liked Cache Ids Error:", error);
+    return [];
+  }
+}
+
+/** 영상 좋아요 토글. youtubeSearchCacheId 필요. */
+export async function toggleLike(
+  youtubeSearchCacheId: string
+): Promise<{ success: boolean; liked: boolean; error?: string }> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return { success: false, liked: false, error: "로그인이 필요합니다." };
+    }
+
+    const cacheId = BigInt(youtubeSearchCacheId);
+    const existing = await prisma.moodTubeLike.findUnique({
+      where: {
+        userId_youtubeSearchCacheId: {
+          userId: session.user.email,
+          youtubeSearchCacheId: cacheId,
+        },
+      },
+    });
+
+    if (existing) {
+      await prisma.moodTubeLike.delete({
+        where: { id: existing.id },
+      });
+      return { success: true, liked: false };
+    }
+
+    await prisma.moodTubeLike.create({
+      data: {
+        userId: session.user.email,
+        youtubeSearchCacheId: cacheId,
+      },
+    });
+    return { success: true, liked: true };
+  } catch (error) {
+    console.error("Toggle Like Error:", error);
+    return {
+      success: false,
+      liked: false,
+      error: "좋아요 처리 중 오류가 발생했습니다.",
+    };
   }
 }
