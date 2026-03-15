@@ -50,6 +50,7 @@ export function MoodResultArea({ result, inputMode, initialTrackIndex }: MoodRes
               title: v.title ?? "",
               channel: v.channel ?? "",
               thumbnail: v.thumbnail ?? "",
+              youtubeSearchCacheId: v.youtubeSearchCacheId,
             }))}
           mood={result.mood}
           description={result.description}

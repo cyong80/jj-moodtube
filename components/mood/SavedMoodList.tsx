@@ -1,7 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { ChevronRight, Disc3, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ChevronRight, Disc3, Sparkles, Heart } from "lucide-react";
+import { toggleLike, getLikedCacheIds } from "@/app/actions";
 import type { MoodPlaylistResult } from "@/types/mood";
 
 interface SavedMoodListProps {
@@ -13,6 +16,29 @@ interface SavedMoodListProps {
  * 저장된 기분 기록 목록 - 라이너 노트 스타일, 모든 곡 노출 + 아이콘
  */
 export function SavedMoodList({ results, onSelect }: SavedMoodListProps) {
+  const [likedCacheIds, setLikedCacheIds] = useState<Set<string>>(new Set());
+  const [likePendingId, setLikePendingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    getLikedCacheIds().then((ids) => setLikedCacheIds(new Set(ids)));
+  }, []);
+
+  const handleLikeClick = async (e: React.MouseEvent, cacheId: string) => {
+    e.stopPropagation();
+    if (likePendingId) return;
+    setLikePendingId(cacheId);
+    const res = await toggleLike(cacheId);
+    setLikePendingId(null);
+    if (res.success) {
+      setLikedCacheIds((prev) => {
+        const next = new Set(prev);
+        if (res.liked) next.add(cacheId);
+        else next.delete(cacheId);
+        return next;
+      });
+    }
+  };
+
   if (results.length === 0) {
     return (
       <div className="h-48 border-2 border-dashed border-border/50 rounded-2xl flex flex-col items-center justify-center gap-3 text-muted-foreground px-4 text-center">
@@ -80,6 +106,20 @@ export function SavedMoodList({ results, onSelect }: SavedMoodListProps) {
                           {video.title ?? "-"}
                         </span>
                       </div>
+                      {video.youtubeSearchCacheId && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0 h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                          onClick={(e) => handleLikeClick(e, video.youtubeSearchCacheId!)}
+                          disabled={likePendingId === video.youtubeSearchCacheId}
+                        >
+                          <Heart
+                            className="h-4 w-4"
+                            fill={likedCacheIds.has(video.youtubeSearchCacheId) ? "currentColor" : "none"}
+                          />
+                        </Button>
+                      )}
                     </li>
                   ))}
                 </ul>
