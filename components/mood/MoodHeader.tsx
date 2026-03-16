@@ -16,8 +16,19 @@ export function MoodHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="space-y-2 sm:space-y-4 overflow-visible">
-      <div className="flex items-center gap-2 sm:gap-4">
+    <header className="space-y-3 sm:space-y-4 overflow-visible">
+      {/* 첫 번째 라인: 제목만 */}
+      <h1 className="font-display text-center text-xl font-black tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
+        Mood<span className="text-primary">Tube</span>
+      </h1>
+
+      {/* 두 번째 라인: 서브타이틀 */}
+      <p className="text-center text-sm text-muted-foreground sm:text-base">
+        오늘의 기분을 분석해보세요
+      </p>
+
+      {/* 세 번째 라인: 네비 + 테마/인증 */}
+      <div className="flex items-center justify-between gap-2 sm:gap-4">
         {/* 좌측: 분석/내역 */}
         <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
           <Link href="/mood" aria-label="분석하기">
@@ -52,17 +63,7 @@ export function MoodHeader() {
           </Link>
         </div>
 
-        {/* 중앙: 로고 + 태그라인(데스크톱만) – 비대칭 오프셋 */}
-        <div className="flex min-w-0 flex-1 flex-col items-center justify-center px-1 sm:px-2 sm:ml-2 md:ml-4">
-          <h1 className="font-display truncate text-xl font-black tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
-            Mood<span className="text-primary">Tube</span>
-          </h1>
-          <p className="hidden text-muted-foreground sm:block sm:text-sm md:text-base">
-            오늘의 기분을 분석해보세요
-          </p>
-        </div>
-
-        {/* 우측: 테마 + 인증 - isolate로 겹침/호버 분리 */}
+        {/* 우측: 테마 + 인증 */}
         <div className="flex shrink-0 flex-nowrap items-center justify-end gap-3">
           <div className="relative isolate shrink-0">
             <ThemeToggle />

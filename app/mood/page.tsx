@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useMoodAnalysis } from "@/hooks/useMoodAnalysis";
 import { useMoodInputMode } from "@/hooks/useMoodInputMode";
 import { useMoodVoice } from "@/hooks/useMoodVoice";
-import { RotateCcw, Save } from "lucide-react";
+import { Loader2, RotateCcw, Save } from "lucide-react";
 import { useCallback, useState } from "react";
 import { saveMoodResult } from "@/app/actions";
 import { toast } from "sonner";
@@ -69,53 +69,66 @@ export default function MoodAnalysisPage() {
       <div className="w-full max-w-[min(1400px,100%)] mx-auto space-y-8 sm:space-y-10 md:space-y-12 min-w-0 overflow-visible">
         <MoodHeader />
 
-        <MoodInputSelector
-          inputMode={inputMode}
-          onModeChange={switchMode}
-        />
+        {!result && (
+          <MoodInputSelector
+            inputMode={inputMode}
+            onModeChange={switchMode}
+          />
+        )}
 
-        <div className="grid lg:grid-cols-12 gap-6 sm:gap-8 md:gap-10 min-w-0">
-          {result ? (
-            <div className="lg:col-span-12 space-y-4 min-w-0">
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={reset}>
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  다시 하기
-                </Button>
-                {sessionStatus === "authenticated" && (
-                  <Button
-                    variant="default"
-                    onClick={handleSave}
-                    disabled={isSaving}
-                  >
-                    <Save className="w-4 h-4 mr-2" />
+        {result ? (
+          <section className="space-y-4 min-w-0" aria-label="분석 결과">
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={reset}
+                className="h-8 w-8 p-0 sm:h-auto sm:w-auto sm:px-3 sm:py-2"
+                aria-label="다시 하기"
+              >
+                <RotateCcw className="w-4 h-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">다시 하기</span>
+              </Button>
+              {sessionStatus === "authenticated" && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="h-8 w-8 p-0 sm:h-auto sm:w-auto sm:px-3 sm:py-2"
+                  aria-label={isSaving ? "저장 중" : "저장하기"}
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin sm:mr-1.5" />
+                  ) : (
+                    <Save className="w-4 h-4 sm:mr-1.5" />
+                  )}
+                  <span className="hidden sm:inline">
                     {isSaving ? "저장 중..." : "저장하기"}
-                  </Button>
-                )}
-              </div>
-              <MoodResultArea result={result} inputMode={inputMode} />
+                  </span>
+                </Button>
+              )}
             </div>
-          ) : (
-            <>
-              <div className="lg:col-span-5 min-w-0">
-                <MoodInputCard
-                  inputMode={inputMode}
-                  status={status}
-                  result={result}
-                  transcript={transcript}
-                  isListening={isListening}
-                  volumeLevel={volumeLevel}
-                  isScanning={status === "scanning"}
-                  onCapture={handleCapture}
-                  onVoiceClick={handleVoiceClick}
-                />
-              </div>
-              <div className="lg:col-span-7 min-w-0">
-                <MoodResultArea result={result} inputMode={inputMode} />
-              </div>
-            </>
-          )}
-        </div>
+            <MoodResultArea result={result} inputMode={inputMode} />
+          </section>
+        ) : (
+          <section
+            className="max-w-xl mx-auto min-w-0"
+            aria-label={inputMode === "capture" ? "사진 촬영" : "음성 입력"}
+          >
+            <MoodInputCard
+              inputMode={inputMode}
+              status={status}
+              result={result}
+              transcript={transcript}
+              isListening={isListening}
+              volumeLevel={volumeLevel}
+              isScanning={status === "scanning"}
+              onCapture={handleCapture}
+              onVoiceClick={handleVoiceClick}
+            />
+          </section>
+        )}
       </div>
     </main>
   );
