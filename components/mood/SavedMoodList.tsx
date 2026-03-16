@@ -79,7 +79,7 @@ export function SavedMoodList({ results, onSelect }: SavedMoodListProps) {
                   <h4 className="font-display text-lg sm:text-xl font-bold text-foreground truncate">
                     {result.mood}
                   </h4>
-                  <ChevronRight className="w-5 h-5 text-primary/60 shrink-0 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
+                  <ChevronRight className="w-5 h-5 text-primary/60 shrink-0 group-hover:text-primary transition-all duration-200" />
                 </div>
 
                 {/* 트랙리스트: 모든 곡 + Disc3 아이콘 */}

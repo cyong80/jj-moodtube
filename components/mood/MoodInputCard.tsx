@@ -54,7 +54,7 @@ export function MoodInputCard({
         <Card
           className={`overflow-hidden rounded-xl sm:rounded-2xl md:rounded-[2rem] transition-all duration-200 ${
             !cameraStarted && !isScanning
-              ? "cursor-pointer hover:scale-[1.01] hover:border-primary/50 hover:bg-muted/30 active:scale-[0.99]"
+              ? "cursor-pointer sm:hover:scale-[1.01] hover:border-primary/50 hover:bg-muted/30 active:scale-[0.99]"
               : ""
           }`}
           onClick={!cameraStarted && !isScanning ? () => setCameraStarted(true) : undefined}
@@ -144,7 +144,7 @@ export function MoodInputCard({
       <Card
         className={`overflow-hidden rounded-xl sm:rounded-2xl md:rounded-[2rem] transition-all duration-200 ${
           isPlaceholderClickable
-            ? "cursor-pointer hover:scale-[1.01] hover:border-primary/50 hover:bg-muted/30 active:scale-[0.99]"
+            ? "cursor-pointer sm:hover:scale-[1.01] hover:border-primary/50 hover:bg-muted/30 active:scale-[0.99]"
             : ""
         }`}
         onClick={isPlaceholderClickable ? onVoiceClick : undefined}

@@ -41,7 +41,7 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body
-        className={`${syne.variable} ${plusJakartaSans.variable} ${notoSansKR.variable} antialiased`}
+        className={`${syne.variable} ${plusJakartaSans.variable} ${notoSansKR.variable} antialiased overflow-x-hidden`}
       >
         <div className="relative z-10 min-h-screen">
           <Providers>

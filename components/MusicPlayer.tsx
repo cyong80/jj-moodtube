@@ -166,9 +166,9 @@ export default function MusicPlayer({ videos, mood, description, itemVariants = 
     <>
       {/* 기분 분석 결과 */}
       <motion.div className="space-y-3" variants={itemVariants}>
-        <div className="flex items-center gap-3">
-          <Music2 className="w-8 h-8 text-primary" />
-          <h2 className="font-display text-3xl font-bold text-foreground">
+        <div className="flex items-center gap-3 min-w-0">
+          <Music2 className="w-8 h-8 shrink-0 text-primary" />
+          <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground break-words">
             당신은 오늘 <span className="text-primary">{mood}</span> 하군요!
           </h2>
         </div>
@@ -239,9 +239,9 @@ export default function MusicPlayer({ videos, mood, description, itemVariants = 
       )}
 
       {/* 플레이리스트 – 비대칭·overlap 레이아웃 */}
-      <motion.div className="space-y-4" variants={itemVariants}>
+      <motion.div className="space-y-4 min-w-0" variants={itemVariants}>
         <h3 className="font-display text-xl font-bold text-foreground">추천 플레이리스트</h3>
-        <div className="relative pl-0 pr-4 sm:pl-2 sm:pr-6">
+        <div className="relative pl-0 pr-4 sm:pl-2 sm:pr-6 min-w-0 overflow-visible">
           {videos.map((video, index) => {
             const isActive = currentVideoId === video.id;
             const offset = index % 2 === 1 ? 12 : 0;
@@ -249,7 +249,7 @@ export default function MusicPlayer({ videos, mood, description, itemVariants = 
             <motion.div
               key={video.id}
               variants={itemVariants}
-              className="relative mb-[-8px] last:mb-0"
+              className="relative mb-[-8px] last:mb-0 overflow-visible"
               style={{ marginLeft: `${offset}px`, zIndex: isActive ? 10 : 5 - Math.min(index, 4) }}
             >
             <Card
@@ -258,8 +258,8 @@ export default function MusicPlayer({ videos, mood, description, itemVariants = 
                 ${isActive ? "shadow-primary/20 ring-1 ring-primary/30" : ""}
                 ${
                   isActive
-                    ? "bg-primary/20 border-primary scale-[1.02] sm:scale-[1.01]"
-                    : "hover:border-primary/50 hover:translate-x-1"
+                    ? "bg-primary/20 border-primary sm:scale-[1.01]"
+                    : "hover:border-primary/50 hover:shadow-md hover:shadow-primary/10"
                 }
               `}
               onClick={() => handleVideoSelect(video.id, index)}

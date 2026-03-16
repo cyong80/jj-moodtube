@@ -65,8 +65,8 @@ export default function MoodAnalysisPage() {
   }, [result]);
 
   return (
-    <main className="min-h-screen bg-background text-foreground px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10">
-      <div className="w-full max-w-[min(1400px,100%)] mx-auto space-y-8 sm:space-y-10 md:space-y-12 overflow-x-visible">
+    <main className="min-h-screen bg-background text-foreground pl-4 pr-6 py-6 sm:pl-6 sm:pr-8 sm:py-8 md:pl-8 md:pr-10 md:py-10 overflow-x-hidden">
+      <div className="w-full max-w-[min(1400px,100%)] mx-auto space-y-8 sm:space-y-10 md:space-y-12 min-w-0 overflow-visible">
         <MoodHeader />
 
         <MoodInputSelector
@@ -74,9 +74,9 @@ export default function MoodAnalysisPage() {
           onModeChange={switchMode}
         />
 
-        <div className="grid lg:grid-cols-12 gap-6 sm:gap-8 md:gap-10">
+        <div className="grid lg:grid-cols-12 gap-6 sm:gap-8 md:gap-10 min-w-0">
           {result ? (
-            <div className="lg:col-span-12 space-y-4">
+            <div className="lg:col-span-12 space-y-4 min-w-0">
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={reset}>
                   <RotateCcw className="w-4 h-4 mr-2" />
@@ -97,7 +97,7 @@ export default function MoodAnalysisPage() {
             </div>
           ) : (
             <>
-              <div className="lg:col-span-5">
+              <div className="lg:col-span-5 min-w-0">
                 <MoodInputCard
                   inputMode={inputMode}
                   status={status}
@@ -110,7 +110,7 @@ export default function MoodAnalysisPage() {
                   onVoiceClick={handleVoiceClick}
                 />
               </div>
-              <div className="lg:col-span-7">
+              <div className="lg:col-span-7 min-w-0">
                 <MoodResultArea result={result} inputMode={inputMode} />
               </div>
             </>
